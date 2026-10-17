@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { User } from 'lucide-react';
 import styles from './Navbar.module.css';
 
@@ -17,10 +20,16 @@ const NAV_LINKS: NavLink[] = [
 ];
 
 export default function Navbar(): React.JSX.Element {
+    const pathname = usePathname();
+
+    const isActive = (href: string): boolean =>
+        href === '/' ? pathname === '/' : pathname.startsWith(href);
+
     return (
         <header className={styles.header}>
             <div className={styles.inner}>
                 <Link href="/" className={styles.brand}>
+                    {/* File: public/images/logo.png */}
                     <Image
                         src="/images/logo.png"
                         alt="IPHO Studio Logo"
@@ -31,11 +40,11 @@ export default function Navbar(): React.JSX.Element {
                 </Link>
 
                 <nav className={styles.nav} aria-label="Navigasi utama">
-                    {NAV_LINKS.map((link, i) => (
+                    {NAV_LINKS.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className={i === 0 ? `${styles.link} ${styles.active}` : styles.link}
+                            className={isActive(link.href) ? `${styles.link} ${styles.active}` : styles.link}
                         >
                             {link.label}
                         </Link>

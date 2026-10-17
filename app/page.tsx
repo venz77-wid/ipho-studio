@@ -7,8 +7,9 @@ import type { LucideIcon } from 'lucide-react';
 import Navbar from '@/components/Navbar/Navbar';
 import Footer from '@/components/Footer/Footer';
 import PackageCard from '@/components/PackageCard/PackageCard';
+import { getFeaturedPackages } from '@/lib/packages';
 import {
-  getFeaturedPackages, getGalleryImages, getStudioFeatures,
+  getGalleryImages, getStudioFeatures,
   type StudioFeature,
 } from '@/lib/supabaseMock';
 import styles from './page.module.css';
