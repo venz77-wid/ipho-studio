@@ -1,0 +1,299 @@
+.container {
+    margin-bottom: 32px;
+}
+
+/* Header Bagian */
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.titleWrapper {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.badgeNumber {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #eff6ff;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.monthIndicator {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    padding-top: 8px;
+}
+
+/* Kotak Kalender */
+.calendarBox {
+    background-color: #f4f6fa;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.calendarTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.calendarTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.calendarNav {
+    display: flex;
+    gap: 8px;
+}
+
+.navBtn {
+    width: 36px;
+    height: 36px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #0f172a;
+    transition: background-color 0.2s;
+}
+
+.navBtn:hover {
+    background-color: #f8fafc;
+}
+
+.daysHeader {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.weekend {
+    color: #ef4444;
+}
+
+.daysGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.dayBtn {
+    height: 48px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.dayBtn:hover:not(.dayDisabled) {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+}
+
+.dayDisabled {
+    background-color: transparent;
+    border-color: transparent;
+    color: #cbd5e1;
+    cursor: default;
+}
+
+.daySelected {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+.selectedDot {
+    width: 4px;
+    height: 4px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 6px;
+}
+
+/* Bagian Slot Jam */
+.slotContainer {
+    margin-top: 16px;
+}
+
+.slotTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.slotTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.slotDuration {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.slotsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.slotCard {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.slotCard:hover:not(.slotBooked) {
+    border-color: #0f172a;
+}
+
+.slotBooked {
+    background-color: #f8fafc;
+    border-color: transparent;
+    cursor: not-allowed;
+}
+
+.slotSelected {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+}
+
+.slotTimeRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.timeText {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.periodTag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.lockIcon {
+    color: #94a3b8;
+}
+
+.checkIcon {
+    color: #ffffff;
+}
+
+.slotFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statusWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #64748b;
+}
+
+.dotSelected {
+    background-color: #ffffff;
+}
+
+.statusText {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.statusTextSelected {
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.statusTextBooked {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* Responsif untuk layar kecil */
+@media (max-width: 768px) {
+    .slotsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .sectionHeader {
+        flex-direction: column;
+        gap: 12px;
+    }
+}

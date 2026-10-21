@@ -1,0 +1,53 @@
+.pageWrapper {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    padding-bottom: 60px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+}
+
+.breadcrumb {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.activeBreadcrumb {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.gridContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media (min-width: 992px) {
+    .gridContainer {
+        grid-template-columns: 1fr 380px;
+    }
+}
+
+.mainColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebarColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    font-size: 16px;
+    color: #64748b;
+}

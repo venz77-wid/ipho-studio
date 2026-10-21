@@ -1,0 +1,156 @@
+.sectionCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sectionNumber {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.subSection {
+    margin-bottom: 20px;
+}
+
+.sectionLabel {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.schemeGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.schemeCard {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    background: #ffffff;
+    transition: all 0.2s;
+}
+
+.selectedCard {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+}
+
+.schemeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.schemePrice {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 0 6px 0;
+}
+
+.schemeDesc {
+    font-size: 11px;
+    color: #64748b;
+    margin: 0;
+}
+
+.selectedCard .schemeDesc {
+    color: #cbd5e1;
+}
+
+.methodList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.methodCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.activeMethod {
+    border-color: #0f172a;
+    background: #ffffff;
+}
+
+.methodInfo {
+    flex: 1;
+}
+
+.methodTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.methodTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.badgeAuto {
+    font-size: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.methodSub {
+    font-size: 11px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
+
+.methodLogo,
+.textLogo {
+    font-weight: 800;
+    font-size: 12px;
+    color: #0f172a;
+}
