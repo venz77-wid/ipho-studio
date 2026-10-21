@@ -27,7 +27,6 @@ export default async function HomePage(): Promise<React.JSX.Element> {
     <>
       <Navbar />
       <main className={styles.main}>
-        {/* HERO */}
         <section className={styles.hero}>
           <div className={styles.container}>
             <div className={styles.heroGrid}>
@@ -44,7 +43,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
                   dan fotografer berpengalaman untuk potret personal, wisuda, keluarga, maupun komersial.
                 </p>
                 <div className={styles.actions}>
-                  <Link href="/booking" className={styles.btnDark}>
+                  <Link href="/katalog" className={styles.btnDark}>
                     Booking Sekarang <ArrowRight size={14} aria-hidden />
                   </Link>
                   <Link href="/jadwal" className={styles.btnLight}>
@@ -84,7 +83,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
           </div>
         </section>
 
-        {/* ABOUT + GALLERY */}
+        {/*ABOUT + GALLERY*/}
         <section className={styles.about}>
           <div className={styles.container}>
             <div className={styles.aboutHead}>
