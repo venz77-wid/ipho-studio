@@ -41,7 +41,7 @@ export default function PaketSayaPage(): React.JSX.Element {
             return;
         }
         try {
-            const res = await fetch('/api/bookings/mine', {
+            const res = await fetch('/api/booking/mine', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orderIds: ids }),
