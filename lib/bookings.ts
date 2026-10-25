@@ -42,38 +42,38 @@ export async function getBookedSlots(date: string): Promise<string[]> {
         .in('status', ['pending', 'confirmed']);
 
     if (error || !data) return [];
-    
+
     // Solusi: Tambahkan definisi tipe { start_time: string } pada parameter 'b'
     return data.map((b: { start_time: string }) => b.start_time.slice(0, 5));
 }
 
-export async function createBooking(
-    payload: BookingFormData & {
-        packageId: string;
-        totalAmount: number;
-        paidAmount: number;
-    }
-) {
-    const { data, error } = await supabase
-        .from('bookings')
-        .insert({
-            package_id: payload.packageId,
-            booking_date: payload.bookingDate,
-            start_time: payload.startTime,
-            end_time: payload.endTime,
-            full_name: payload.fullName,
-            whatsapp: payload.whatsapp,
-            email: payload.email,
-            special_notes: payload.specialNotes || null,
-            payment_scheme: payload.paymentScheme,
-            payment_method: payload.paymentMethod,
-            total_amount: payload.totalAmount,
-            paid_amount: payload.paidAmount,
-            status: 'pending',
-        })
-        .select()
-        .single();
+// export async function createBooking(
+//     payload: BookingFormData & {
+//         packageId: string;
+//         totalAmount: number;
+//         paidAmount: number;
+//     }
+// ) {
+//     const { data, error } = await supabase
+//         .from('bookings')
+//         .insert({
+//             package_id: payload.packageId,
+//             booking_date: payload.bookingDate,
+//             start_time: payload.startTime,
+//             end_time: payload.endTime,
+//             full_name: payload.fullName,
+//             whatsapp: payload.whatsapp,
+//             email: payload.email,
+//             special_notes: payload.specialNotes || null,
+//             payment_scheme: payload.paymentScheme,
+//             payment_method: payload.paymentMethod,
+//             total_amount: payload.totalAmount,
+//             paid_amount: payload.paidAmount,
+//             status: 'pending',
+//         })
+//         .select()
+//         .single();
 
-    if (error) throw new Error(`Gagal membuat pesanan: ${error.message}`);
-    return data;
-}
+//     if (error) throw new Error(`Gagal membuat pesanan: ${error.message}`);
+//     return data;
+// }
