@@ -12,7 +12,8 @@ import ConfirmationModal from '@/components/ConfirmationModal/ConfirmationModal'
 
 
 // TAMBAHAN 1: Import getBookedSlots
-import { getPackageBySlug, getBookedSlots } from '@/lib/bookings';
+import { getPackageBySlug, getBookedRanges } from '@/lib/bookings';
+import { getDefaultDate, type BookedRange } from '@/lib/scheduleUtils';
 import type { CatalogPackage } from '@/lib/catalogTypes';
 import type { BookingFormData, TimeSlot, PaymentScheme, PaymentMethod } from '@/lib/bookingTypes';
 import { saveOrderId } from '@/lib/myBookingsStorage';
@@ -25,26 +26,26 @@ interface BookingPageProps {
 
 export default function BookingPage({ searchParams }: BookingPageProps) {
     const params = use(searchParams);
-    const packageSlug = params.paket || 'editorial-portrait';
+    const packageSlug = params.paket || 'graduation-solo-editorial';
 
     const [packageData, setPackageData] = useState<CatalogPackage | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State Form Booking
-    const [selectedDate, setSelectedDate] = useState('2026-10-28');
+    const [selectedDate, setSelectedDate] = useState<string>(() => getDefaultDate());
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>('full');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('qris');
 
     // TAMBAHAN 2: State untuk menyimpan jam yang sudah dipesan
-    const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+    const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const [formData, setFormData] = useState<BookingFormData>({
         packageSlug,
-        bookingDate: '2026-10-28',
+        bookingDate: getDefaultDate(),
         startTime: '',
         endTime: '',
         fullName: '',
@@ -70,24 +71,23 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
         fetchPackage();
     }, [packageSlug]);
 
-    // TAMBAHAN 3: Effect untuk mengecek ketersediaan jam setiap kali tanggal berubah
+    // Ambil jam yang sudah terisi setiap kali tanggal berubah
     useEffect(() => {
-        async function fetchBookedSlots() {
-            try {
-                const slots = await getBookedSlots(selectedDate);
-                setBookedSlots(slots);
+        let cancelled = false;
+        getBookedRanges(selectedDate).then((ranges) => {
+            if (!cancelled) setBookedRanges(ranges);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedDate]);
 
-                // Jika jam yang sedang dipilih ternyata sudah penuh di tanggal yang baru, reset pilihannya
-                if (selectedSlot && slots.includes(selectedSlot.startTime)) {
-                    setSelectedSlot(null);
-                    setFormData((prev) => ({ ...prev, startTime: '', endTime: '' }));
-                }
-            } catch (err) {
-                console.error('Gagal mengecek ketersediaan slot:', err);
-            }
-        }
-        fetchBookedSlots();
-    }, [selectedDate, selectedSlot]);
+    // Ganti tanggal: jam yang dipilih direset karena ketersediaan tiap hari berbeda
+    const handleSelectDate = (date: string) => {
+        setSelectedDate(date);
+        setSelectedSlot(null);
+        setFormData((prev) => ({ ...prev, bookingDate: date, startTime: '', endTime: '' }));
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -185,12 +185,12 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
                         <div className={styles.mainColumn}>
                             <SchedulePicker
                                 selectedDate={selectedDate}
-                                onSelectDate={setSelectedDate}
+                                onSelectDate={handleSelectDate}
                                 selectedSlot={selectedSlot}
                                 onSelectSlot={handleSlotSelect}
                                 durationMinutes={packageData.durationMinutes}
                                 // TAMBAHAN 4: Lempar data slot penuh ke komponen
-                                bookedSlots={bookedSlots}
+                                bookedRanges={bookedRanges}
                             />
 
                             <ContactForm

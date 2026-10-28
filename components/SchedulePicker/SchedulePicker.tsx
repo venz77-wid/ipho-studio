@@ -1,6 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Lock, CheckCircle2, Calendar } from 'lucide-react';
 import type { TimeSlot } from '@/lib/bookingTypes';
+import {
+    SLOT_START_TIMES,
+    calculateEndTime,
+    getNowWIB,
+    isSlotInPast,
+    overlapsAny,
+    type BookedRange,
+} from '@/lib/scheduleUtils';
 import styles from './SchedulePicker.module.css';
 
 interface SchedulePickerProps {
@@ -9,31 +17,15 @@ interface SchedulePickerProps {
     selectedSlot: TimeSlot | null;
     onSelectSlot: (slot: TimeSlot) => void;
     durationMinutes: number;
-    bookedSlots: string[];
+    bookedRanges: BookedRange[];
 }
 
-// 1. Kita hapus endTime statis, cukup simpan jam mulainya saja
-const BASE_START_TIMES = [
-    { id: '1', startTime: '10:00', period: 'Pagi' },
-    { id: '2', startTime: '11:30', period: 'Pagi' },
-    { id: '3', startTime: '13:30', period: 'Siang' },
-    { id: '4', startTime: '15:00', period: 'Siang' },
-    { id: '5', startTime: '16:30', period: 'Golden Hour' },
-    { id: '6', startTime: '18:30', period: 'Malam' },
-];
-
-// 2. Fungsi sakti untuk menghitung jam selesai otomatis berdasarkan menit
-const calculateEndTime = (start: string, duration: number) => {
-    const [hours, minutes] = start.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes + duration;
-    const endHours = Math.floor(totalMinutes / 60);
-    const endMins = totalMinutes % 60;
-    return `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
-};
-
-// Helper untuk format YYYY-MM-DD
-const formatDateStr = (year: number, monthIndex: number, day: number) => {
-    return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+const pad = (n: number): string => String(n).padStart(2, '0');
+const toDateStr = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// Baca 'YYYY-MM-DD' sebagai tanggal lokal (new Date('YYYY-MM-DD') dibaca sebagai UTC)
+const parseDate = (s: string): Date => {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
 };
 
 export default function SchedulePicker({
@@ -42,65 +34,68 @@ export default function SchedulePicker({
     selectedSlot,
     onSelectSlot,
     durationMinutes,
-    bookedSlots,
+    bookedRanges,
 }: SchedulePickerProps) {
-    
-    // State Kalender
+    const today = getNowWIB().date;
+
     const [viewDate, setViewDate] = useState(() => {
-        return selectedDate ? new Date(selectedDate) : new Date(2026, 9, 28);
+        const d = parseDate(selectedDate || today);
+        return new Date(d.getFullYear(), d.getMonth(), 1);
     });
 
     const currentMonthLabel = viewDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 
     const formattedSelectedDate = useMemo(() => {
         if (!selectedDate) return '';
-        const d = new Date(selectedDate);
-        return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        return parseDate(selectedDate).toLocaleDateString('id-ID', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        });
     }, [selectedDate]);
+
+    // Bulan sebelum bulan ini tidak bisa dibuka
+    const todayDate = parseDate(today);
+    const canGoPrev =
+        viewDate.getFullYear() * 12 + viewDate.getMonth() > todayDate.getFullYear() * 12 + todayDate.getMonth();
 
     const calendarDays = useMemo(() => {
         const year = viewDate.getFullYear();
         const month = viewDate.getMonth();
-        
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-        const startingDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; 
-        
+        const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // Senin = 0
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const daysInPrevMonth = new Date(year, month, 0).getDate();
-        
-        const days = [];
-        
-        for (let i = 0; i < startingDay; i++) {
-            const dayNum = daysInPrevMonth - startingDay + i + 1;
-            days.push({ num: dayNum, isCurrent: false, date: formatDateStr(year, month - 1, dayNum) });
-        }
-        
-        for (let i = 1; i <= daysInMonth; i++) {
-            days.push({ num: i, isCurrent: true, date: formatDateStr(year, month, i) });
-        }
-        
-        const remainingSlots = (Math.ceil(days.length / 7) * 7) - days.length;
-        for (let i = 1; i <= remainingSlots; i++) {
-            days.push({ num: i, isCurrent: false, date: formatDateStr(year, month + 1, i) });
-        }
-        
-        return days;
+        const total = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+        return Array.from({ length: total }, (_, i) => {
+            const d = new Date(year, month, 1 - startOffset + i);
+            return { num: d.getDate(), isCurrent: d.getMonth() === month, date: toDateStr(d) };
+        });
     }, [viewDate]);
 
-    // 3. Gabungkan jam mulai dan hitung jam selesai secara reaktif
-    const dynamicSlots = useMemo(() => {
-        return BASE_START_TIMES.map(slot => ({
-            ...slot,
-            endTime: calculateEndTime(slot.startTime, durationMinutes)
-        }));
-    }, [durationMinutes]);
+    // Jam selesai dihitung dari durasi paket; status tiap jam ditentukan di bawah
+    const slots = useMemo(() => {
+        return SLOT_START_TIMES.map((s) => {
+            const endTime = calculateEndTime(s.startTime, durationMinutes);
+            const past = isSlotInPast(selectedDate, s.startTime);
+            // Bentrok jika rentang jam sesi ini beririsan dengan pesanan lain (bukan hanya jam mulai yang sama)
+            const booked = !past && overlapsAny(s.startTime, endTime, bookedRanges);
+            const slot: TimeSlot = {
+                id: s.id,
+                startTime: s.startTime,
+                endTime,
+                period: s.period,
+                isAvailable: !past && !booked,
+                reason: past ? 'past' : booked ? 'booked' : undefined,
+            };
+            return slot;
+        });
+    }, [durationMinutes, selectedDate, bookedRanges]);
 
-    const handlePrevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+    const handlePrevMonth = () => {
+        if (canGoPrev) setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+    };
     const handleNextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
 
     return (
         <div className={styles.container}>
-            {/* Header Bagian 01 */}
             <div className={styles.sectionHeader}>
                 <div className={styles.titleWrapper}>
                     <div className={styles.badgeNumber}>01</div>
@@ -112,7 +107,6 @@ export default function SchedulePicker({
                 <span className={styles.monthIndicator}>{currentMonthLabel.toUpperCase()}</span>
             </div>
 
-            {/* Box Kalender */}
             <div className={styles.calendarBox}>
                 <div className={styles.calendarTop}>
                     <div className={styles.calendarTitle}>
@@ -120,8 +114,12 @@ export default function SchedulePicker({
                         <span style={{ textTransform: 'capitalize' }}>{currentMonthLabel}</span>
                     </div>
                     <div className={styles.calendarNav}>
-                        <button onClick={handlePrevMonth} className={styles.navBtn}><ChevronLeft size={16} /></button>
-                        <button onClick={handleNextMonth} className={styles.navBtn}><ChevronRight size={16} /></button>
+                        <button type="button" onClick={handlePrevMonth} disabled={!canGoPrev} className={styles.navBtn} aria-label="Bulan sebelumnya">
+                            <ChevronLeft size={16} />
+                        </button>
+                        <button type="button" onClick={handleNextMonth} className={styles.navBtn} aria-label="Bulan berikutnya">
+                            <ChevronRight size={16} />
+                        </button>
                     </div>
                 </div>
 
@@ -131,18 +129,17 @@ export default function SchedulePicker({
                 </div>
 
                 <div className={styles.daysGrid}>
-                    {calendarDays.map((day, idx) => {
+                    {calendarDays.map((day) => {
+                        const isPast = day.date < today;
+                        const isDisabled = !day.isCurrent || isPast;
                         const isSelected = day.date === selectedDate;
                         return (
                             <button
-                                key={idx}
-                                onClick={() => day.isCurrent && onSelectDate(day.date)}
-                                className={`
-                                    ${styles.dayBtn}
-                                    ${!day.isCurrent ? styles.dayDisabled : ''}
-                                    ${isSelected ? styles.daySelected : ''}
-                                `}
-                                disabled={!day.isCurrent}
+                                type="button"
+                                key={day.date}
+                                onClick={() => !isDisabled && onSelectDate(day.date)}
+                                className={`${styles.dayBtn} ${isDisabled ? styles.dayDisabled : ''} ${isSelected ? styles.daySelected : ''}`}
+                                disabled={isDisabled}
                             >
                                 {day.num}
                                 {isSelected && <div className={styles.selectedDot} />}
@@ -152,7 +149,6 @@ export default function SchedulePicker({
                 </div>
             </div>
 
-            {/* Sesi Jam */}
             <div className={styles.slotContainer}>
                 <div className={styles.slotTop}>
                     <h3 className={styles.slotTitle}>Pilih Sesi Jam ({formattedSelectedDate})</h3>
@@ -160,12 +156,10 @@ export default function SchedulePicker({
                 </div>
 
                 <div className={styles.slotsGrid}>
-                    {/* 4. Pakai dynamicSlots untuk me-render kotaknya */}
-                    {dynamicSlots.map((slot) => {
-                        const isBooked = bookedSlots.includes(slot.startTime);
+                    {slots.map((slot) => {
                         const isSelected = selectedSlot?.id === slot.id;
 
-                        if (isBooked) {
+                        if (!slot.isAvailable) {
                             return (
                                 <div key={slot.id} className={`${styles.slotCard} ${styles.slotBooked}`}>
                                     <div className={styles.slotTimeRow}>
@@ -173,7 +167,9 @@ export default function SchedulePicker({
                                         <Lock size={16} className={styles.lockIcon} />
                                     </div>
                                     <div className={styles.slotFooter}>
-                                        <span className={styles.statusTextBooked}>Penuh Terisi</span>
+                                        <span className={styles.statusTextBooked}>
+                                            {slot.reason === 'past' ? 'Sudah Lewat' : 'Penuh Terisi'}
+                                        </span>
                                     </div>
                                 </div>
                             );
@@ -182,7 +178,7 @@ export default function SchedulePicker({
                         return (
                             <div
                                 key={slot.id}
-                                onClick={() => onSelectSlot(slot as TimeSlot)}
+                                onClick={() => onSelectSlot(slot)}
                                 className={`${styles.slotCard} ${isSelected ? styles.slotSelected : ''}`}
                             >
                                 <div className={styles.slotTimeRow}>
