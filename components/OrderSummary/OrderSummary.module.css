@@ -1,0 +1,206 @@
+.sidebarCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 24px;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.categoryBadge {
+    font-size: 11px;
+    font-weight: 600;
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.mediaContainer {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.image {
+    object-fit: cover;
+}
+
+.pkgTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+}
+
+.pkgDesc {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0 0 14px 0;
+}
+
+.featureList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.featureItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #334155;
+}
+
+.checkIcon {
+    color: #0f172a;
+}
+
+.scheduleBox {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.scheduleLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.5px;
+}
+
+.scheduleValue {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 4px 0 2px 0;
+}
+
+.roomText {
+    font-size: 11px;
+    color: #64748b;
+    margin: 0;
+}
+
+.priceBreakdown {
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.freeText {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.totalRow {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 14px;
+    margin-bottom: 16px;
+}
+
+.totalLabel {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.totalAmount {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 2px 0 0 0;
+}
+
+.ctaButton {
+    width: 100%;
+    background: #0f172a;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ctaButton:hover {
+    background: #1e293b;
+}
+
+.ctaButton:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.securityText {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #64748b;
+    margin: 12px 0 16px 0;
+}
+
+.infoBox {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.infoTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.infoDesc {
+    font-size: 11px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
