@@ -5,6 +5,7 @@ import {
     ENABLED_PAYMENTS,
     SNAP_EXPIRY_MINUTES,
     STALE_MS,
+    expireTransaction,
     buildOrderId,
     createSnapTransaction,
     syncPendingBooking,
@@ -71,29 +72,47 @@ export async function POST(req: Request): Promise<NextResponse> {
         .eq('status', 'pending')
         .or(`created_at.lt.${cutoff},order_id.is.null`);
     for (const r of stale ?? []) {
-        if (r.order_id) await syncPendingBooking(r.order_id, r.created_at);
-        else await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('id', r.id);
+        try {
+            if (r.order_id) await syncPendingBooking(r.order_id, r.created_at);
+            else await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('id', r.id);
+        } catch (e) {
+            console.error('Gagal membersihkan pesanan lama:', e);
+        }
+    }
+
+    // Pesanan yang sama milik pemesan ini masih menunggu bayar (mis. menekan Back dari halaman Midtrans):
+    // pakai ulang link pembayarannya, jangan dianggap bentrok dengan orang lain.
+    const { data: own } = await supabaseAdmin
+        .from('bookings')
+        .select('order_id, payment_url, package_id, payment_scheme, payment_method')
+        .eq('booking_date', b.bookingDate)
+        .eq('start_time', b.startTime)
+        .eq('status', 'pending')
+        .eq('email', b.email.trim())
+        .gte('created_at', cutoff)
+        .not('payment_url', 'is', null);
+    for (const o of own ?? []) {
+        if (o.package_id === pkg.id && o.payment_scheme === b.paymentScheme && o.payment_method === b.paymentMethod) {
+            return NextResponse.json({ orderId: o.order_id, redirectUrl: o.payment_url });
+        }
+        // Pilihan berbeda: tutup pesanan lama, lalu buat yang baru
+        await expireTransaction(o.order_id);
+        await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('order_id', o.order_id).eq('status', 'pending');
     }
 
     // 3. Simpan pesanan (pending). Indeks unik di database mencegah slot ganda.
     // Cek bentrok: jam yang beririsan tidak boleh dipesan dua kali (satu studio)
 
     const { data: active } = await supabaseAdmin
-
         .from('bookings')
-
         .select('start_time, end_time')
-
         .eq('booking_date', b.bookingDate)
-
         .in('status', ['pending', 'confirmed']);
 
     const taken = (active ?? []).map((x) => ({ start: String(x.start_time).slice(0, 5), end: String(x.end_time).slice(0, 5) }));
 
     if (overlapsAny(b.startTime, endTime, taken)) {
-
         return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
-
     }
 
 

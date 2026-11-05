@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import {
     LayoutDashboard, CalendarDays, Calendar, Users,
@@ -10,10 +10,84 @@ import {
 } from 'lucide-react';
 import RescheduleModal from '@/components/RescheduleModal/RescheduleModal';
 import LogoutButton from '@/components/LogoutButton';
+import { paymentStatusLabel, type AdminOrderDetail } from '@/lib/adminTypes';
+import { PAYMENT_METHOD_LABEL, formatBookingDate } from '@/lib/bookingFormat';
+import { getNowWIB } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
 
 const formatRupiah = (angka: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+};
+
+interface OrderView {
+    id: string;
+    status: string;
+    isActiveToday: boolean;
+    createdAt: string;
+    scheduleDate: string;
+    scheduleTime: string;
+    client: { name: string; whatsapp: string; isWaVerified: boolean; email: string; registeredOnline: boolean };
+    session: {
+        slot: string; package: string; packageDesc: string; room: string; roomDesc: string;
+        durationText: string; durationNote: string; specialRequest: string;
+        images: { title: string; src: string }[];
+    };
+    finance: {
+        method: string; gatewayId: string; verifyTime: string;
+        breakdown: { label: string; value: number; isPromo?: boolean }[];
+        total: number; paid: number; remaining: number;
+    };
+    allocation: { date: string; start: string; end: string; dayStart: string; dayEnd: string };
+}
+
+const WIB = 'Asia/Jakarta';
+const shortDate = (iso: string): string =>
+    new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: WIB });
+const dateTime = (iso: string): string =>
+    `${shortDate(iso)}, ${new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: WIB }).replace('.', ':')} WIB`;
+
+const emptyOrder = (id: string): OrderView => ({
+    id, status: '', isActiveToday: false, createdAt: '', scheduleDate: '', scheduleTime: '',
+    client: { name: '', whatsapp: '', isWaVerified: false, email: '', registeredOnline: false },
+    session: { slot: '', package: '', packageDesc: '', room: '', roomDesc: '', durationText: '', durationNote: '', specialRequest: '', images: [] },
+    finance: { method: '', gatewayId: '', verifyTime: '', breakdown: [], total: 0, paid: 0, remaining: 0 },
+    allocation: { date: '', start: '', end: '', dayStart: '09:00', dayEnd: '21:00' },
+});
+
+// Mengubah data database menjadi bentuk yang dipakai tampilan halaman ini
+const toOrderView = (o: AdminOrderDetail): OrderView => {
+    const paid = o.status === 'confirmed' ? o.paidAmount : 0;
+    const time = `${o.startTime} - ${o.endTime} WIB`;
+    return {
+        id: `#${o.orderId}`,
+        status: paymentStatusLabel(o.status, o.paymentScheme).toUpperCase(),
+        isActiveToday: o.status === 'confirmed' && o.bookingDate === getNowWIB().date,
+        createdAt: shortDate(o.createdAt),
+        scheduleDate: formatBookingDate(o.bookingDate),
+        scheduleTime: time,
+        client: { name: o.fullName, whatsapp: o.whatsapp, isWaVerified: false, email: o.email, registeredOnline: false },
+        session: {
+            slot: `SLOT ${o.startTime}`,
+            package: o.package.title,
+            packageDesc: o.package.description,
+            room: 'Studio Room A',
+            roomDesc: 'Daylight Cyclorama',
+            durationText: `${time} (${o.package.durationMinutes} Menit Foto)`,
+            durationNote: '',
+            specialRequest: o.specialNotes ?? '',
+            images: [{ title: o.package.label || 'PAKET', src: o.package.imageSrc ?? '/images/packages/placeholder.jpg' }],
+        },
+        finance: {
+            method: PAYMENT_METHOD_LABEL[o.paymentMethod],
+            gatewayId: `#${o.orderId}`,
+            verifyTime: o.paidAt ? dateTime(o.paidAt) : 'Belum dibayar',
+            breakdown: [{ label: `Sewa Studio & Sesi Foto (${o.package.durationMinutes}m)`, value: o.totalAmount }],
+            total: o.totalAmount,
+            paid,
+            remaining: Math.max(0, o.totalAmount - paid),
+        },
+        allocation: { date: o.bookingDate, start: o.startTime, end: o.endTime, dayStart: '09:00', dayEnd: '21:00' },
+    };
 };
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,61 +97,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     // State untuk kontrol Modal Reschedule
     const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
 
-    // State dinamis siap integrasi API Supabase
-    const [orderData, setOrderData] = useState({
-        id: orderId,
-        status: "LUNAS 100%",
-        isActiveToday: true,
-        createdAt: "20 Okt 2025",
-        scheduleDate: "Sabtu, 28 Okt 2025",
-        scheduleTime: "13:30 - 14:30 WIB",
+    // Data pesanan diambil dari database lewat /api/admin/orders/[id]
+    const [orderData, setOrderData] = useState<OrderView>(() => emptyOrder(orderId));
+    const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [loadError, setLoadError] = useState('');
 
-        client: {
-            name: "Nadia Larasati",
-            whatsapp: "+62 812-3456-7890",
-            isWaVerified: true,
-            email: "nadia.larasati@gmail.com",
-            registeredOnline: true,
-        },
-
-        session: {
-            slot: "SLOT #04",
-            package: "Editorial Portrait & Wisuda",
-            packageDesc: "Termasuk 10 file edited resolution high",
-            room: "Studio Room A",
-            roomDesc: "Daylight Cyclorama (6 x 5 Meter)",
-            durationText: "13:30 - 14:30 WIB (60 Menit Foto)",
-            durationNote: "+ 30 Menit Review Langsung di Meja Kurasi",
-            specialRequest: "Request backdrop warna Warm Oatmeal / Beige, mohon siapkan 2 properti kursi kayu vintage dan stand toga.",
-            images: [
-                { title: 'ROOM A', src: '/images/packages/placeholder.jpg' },
-                { title: 'PROPS SET', src: '/images/packages/placeholder.jpg' },
-                { title: 'ADD-ON ITEM', src: '/images/packages/placeholder.jpg' }
-            ]
-        },
-
-        finance: {
-            method: "BCA Virtual Account",
-            gatewayId: "#TRX-BCA-99214",
-            verifyTime: "20 Okt 2025, 14:12 WIB",
-            breakdown: [
-                { label: "Sewa Studio & Sesi Foto (60m)", value: 450000 },
-                { label: "Properti Khusus (Backdrop & Kursi)", value: 0 },
-                { label: "Add-on Frame Kayu 10R Minimalis", value: 0, isPromo: true },
-            ],
-            total: 450000,
-            paid: 450000,
-            remaining: 0
-        },
-
-        allocation: {
-            date: "28 Okt 2025",
-            start: "13:30",
-            end: "17:00",
-            dayStart: "09:00",
-            dayEnd: "21:00"
-        }
-    });
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, { cache: 'no-store' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Gagal memuat pesanan.');
+                if (!cancelled) {
+                    setOrderData(toOrderView(data.order as AdminOrderDetail));
+                    setLoadState('ready');
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    setLoadError(e instanceof Error ? e.message : 'Gagal memuat pesanan.');
+                    setLoadState('error');
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [id]);
 
     // Handler ketika reschedule dikonfirmasi dari dalam modal
     const handleConfirmReschedule = (newDate: string, newSlot: string) => {
@@ -88,6 +134,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         }));
         alert(`Jadwal pesanan ${orderData.id} berhasil diperbarui ke ${newDate} (${newSlot})!`);
     };
+
+    if (loadState !== 'ready') {
+        return (
+            <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+                <p>{loadState === 'loading' ? 'Memuat pesanan...' : loadError}</p>
+                <p style={{ marginTop: 16 }}><Link href="/admin">Kembali ke Dashboard</Link></p>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.adminLayout}>

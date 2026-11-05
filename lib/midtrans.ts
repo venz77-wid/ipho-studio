@@ -11,9 +11,10 @@ const SNAP_URL = isProd
     : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 const API_URL = isProd ? 'https://api.midtrans.com/v2' : 'https://api.sandbox.midtrans.com/v2';
 
-/** Slot terkunci 15 menit (sesuai mockup). */
-export const SNAP_EXPIRY_MINUTES = 15;
-export const STALE_MS = (SNAP_EXPIRY_MINUTES + 1) * 60 * 1000;
+/** Pesanan yang belum dibayar otomatis batal setelah sekian menit (ubah angka ini saja). */
+export const PENDING_TTL_MINUTES = 10;
+export const SNAP_EXPIRY_MINUTES = PENDING_TTL_MINUTES; // batas waktu di halaman Midtrans
+export const STALE_MS = PENDING_TTL_MINUTES * 60 * 1000;
 
 /** Pemetaan metode di website -> kode channel Snap. */
 export const ENABLED_PAYMENTS: Record<PaymentMethod, string[]> = {
@@ -88,7 +89,7 @@ export function mapTransactionStatus(ts: string, fraud?: string): BookingStatus 
     return 'pending';
 }
 
-/** Simpan hasil dari Midtrans ke database (hanya mengubah pesanan yang masih pending). */
+/** Simpan hasil dari Midtrans ke database. */
 export async function applyTransactionResult(
     orderId: string,
     ts: string,
@@ -98,23 +99,82 @@ export async function applyTransactionResult(
     const patch: Record<string, string> = { midtrans_status: ts };
     if (status !== 'pending') patch.status = status;
     if (status === 'confirmed') patch.paid_at = new Date().toISOString();
-    await supabaseAdmin.from('bookings').update(patch).eq('order_id', orderId).eq('status', 'pending');
+
+    let query = supabaseAdmin.from('bookings').update(patch).eq('order_id', orderId);
+    // Pembayaran yang masuk terlambat tetap diakui selama jamnya belum diambil orang lain
+    // (aturan database menolak jika jam itu sudah terisi).
+    query = status === 'confirmed' ? query.in('status', ['pending', 'expired']) : query.eq('status', 'pending');
+
+    const { error } = await query;
+    if (error) {
+        console.error(`Gagal menyimpan status ${orderId}:`, error.message);
+        if (status === 'confirmed') return 'expired';
+    }
     return status;
 }
 
-/** Cek satu pesanan pending ke Midtrans; kedaluwarsakan jika sudah lewat batas dan tak dikenal. */
-export async function syncPendingBooking(orderId: string, createdAt: string): Promise<BookingStatus> {
-    const tx = await getTransactionStatus(orderId);
-    if (tx) return applyTransactionResult(orderId, tx.transaction_status, tx.fraud_status);
-    if (Date.now() - new Date(createdAt).getTime() > STALE_MS) {
-        await supabaseAdmin
-            .from('bookings')
-            .update({ status: 'expired' })
-            .eq('order_id', orderId)
-            .eq('status', 'pending');
-        return 'expired';
+/** Minta Midtrans menutup transaksi yang belum dibayar agar tidak bisa dibayar lagi. */
+export async function expireTransaction(orderId: string): Promise<void> {
+    try {
+        await fetch(`${API_URL}/${encodeURIComponent(orderId)}/expire`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', Authorization: authHeader() },
+            cache: 'no-store',
+        });
+    } catch (e) {
+        console.error('Gagal menutup transaksi di Midtrans:', e);
     }
-    return 'pending';
+}
+
+/**
+ * Cek satu pesanan yang masih pending.
+ * - Sudah dibayar -> dikonfirmasi (selalu menang atas batas waktu).
+ * - Belum dibayar dan umurnya melewati PENDING_TTL_MINUTES -> dibatalkan (expired).
+ */
+export async function syncPendingBooking(orderId: string, createdAt: string): Promise<BookingStatus> {
+    const isStale = Date.now() - new Date(createdAt).getTime() >= STALE_MS;
+
+    const tx = await getTransactionStatus(orderId);
+    if (tx) {
+        const status = await applyTransactionResult(orderId, tx.transaction_status, tx.fraud_status);
+        if (status !== 'pending') return status;
+    }
+    if (!isStale) return 'pending';
+
+    if (tx) await expireTransaction(orderId);
+    await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'expired', midtrans_status: 'expire' })
+        .eq('order_id', orderId)
+        .eq('status', 'pending');
+    return 'expired';
+}
+
+/** Rapikan semua pesanan pending sekaligus (dipakai dashboard admin). */
+export async function syncPendingBatch(limit = 50): Promise<void> {
+    // Sisa data lama tanpa nomor pesanan tidak mungkin dibayar -> langsung kedaluwarsa
+    await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('status', 'pending').is('order_id', null);
+
+    const { data } = await supabaseAdmin
+        .from('bookings')
+        .select('order_id, created_at')
+        .eq('status', 'pending')
+        .not('order_id', 'is', null)
+        .order('created_at', { ascending: true }) // yang paling lama dibereskan dulu
+        .limit(limit);
+
+    const rows = data ?? [];
+    for (let i = 0; i < rows.length; i += 10) {
+        await Promise.all(
+            rows.slice(i, i + 10).map(async (r) => {
+                try {
+                    await syncPendingBooking(r.order_id as string, r.created_at as string);
+                } catch (e) {
+                    console.error('Sinkron status gagal:', e);
+                }
+            }),
+        );
+    }
 }
 
 /** Verifikasi tanda tangan notifikasi (webhook) dari Midtrans. */
