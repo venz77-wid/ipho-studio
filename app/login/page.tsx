@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 import { login } from './actions';
@@ -127,6 +128,11 @@ export default function LoginPage() {
                             {!isLoading && <ArrowRight size={18} aria-hidden />}
                         </button>
                     </form>
+
+                    <p className={styles.switchText}>
+                        Belum punya akun?{' '}
+                        <Link href="/register" className={styles.switchLink}>Daftar</Link>
+                    </p>
 
                     <div className={styles.rightFooter}>
                         <Lock size={12} aria-hidden />

@@ -69,6 +69,8 @@ export async function proxy(request: NextRequest) {
 
     const isApi = path === '/api' || path.startsWith('/api/');
     const isLogin = path === '/login';
+    const isRegister = path === '/register';
+    const isAuthCallback = path === '/auth/callback';
     const isPublic = PUBLIC_PATHS.some((p) =>
         p === '/' ? path === '/' : path === p || path.startsWith(p + '/'),
     );
@@ -80,7 +82,7 @@ export async function proxy(request: NextRequest) {
 
     // Belum login
     if (authError || !user) {
-        if (isLogin || (isPublic && !isAdmin)) return finish(response);
+        if (isLogin || isRegister || isAuthCallback || (isPublic && !isAdmin)) return finish(response);
 
         if (isApi) {
             return finish(NextResponse.json({ error: 'Silakan login terlebih dahulu.' }, { status: 401 }));
@@ -96,7 +98,7 @@ export async function proxy(request: NextRequest) {
         .single();
 
     if (profileError || !profile || !['customer', 'admin'].includes(profile.role)) {
-        if (isLogin) return finish(response);
+        if (isLogin || isRegister) return finish(response);
         return finish(
             NextResponse.json({ error: 'Profil akun tidak tersedia. Hubungi pengelola.' }, { status: 403 }),
         );
@@ -110,8 +112,8 @@ export async function proxy(request: NextRequest) {
         return go('/');
     }
 
-    // Sudah login tapi membuka /login -> arahkan sesuai role (POST tetap boleh: itu Server Action)
-    if (isLogin && (request.method === 'GET' || request.method === 'HEAD')) {
+    // Sudah login tapi membuka /login atau /register -> arahkan sesuai role (POST tetap boleh: itu Server Action)
+    if ((isLogin || isRegister) && (request.method === 'GET' || request.method === 'HEAD')) {
         return go(profile.role === 'admin' ? '/admin' : '/');
     }
 

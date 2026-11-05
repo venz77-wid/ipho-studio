@@ -320,7 +320,8 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
-.linkItem, .linkItemAlt {
+.linkItem,
+.linkItemAlt {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -337,7 +338,8 @@
     color: #64748b;
 }
 
-.linkItem:hover, .linkItemAlt:hover {
+.linkItem:hover,
+.linkItemAlt:hover {
     text-decoration: underline;
 }
 
@@ -355,9 +357,37 @@
     .rightPanel {
         padding: 32px 24px;
     }
+
     .actionLinks {
         flex-direction: column;
         gap: 16px;
         align-items: flex-start;
     }
+}
+
+/* Link pindah Masuk <-> Daftar */
+.switchText {
+    margin: 20px 0 0;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.switchLink {
+    color: #0f172a;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.switchLink:hover {
+    text-decoration: underline;
+}
+
+.successBox {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin: auto 0;
+    color: #0f172a;
 }
