@@ -3,10 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-    LayoutDashboard, 
-    CalendarDays, 
-    LogOut, 
+import {
+    LayoutDashboard,
+    CalendarDays,
     Calendar,
     Search,
     ArrowUpRight,
@@ -19,6 +18,7 @@ import {
     ChevronRight,
     Radio
 } from 'lucide-react';
+import LogoutButton from '@/components/LogoutButton';
 import styles from './page.module.css';
 
 // Helper Format Rupiah
@@ -126,10 +126,7 @@ export default function AdminDashboard() {
                         <span>STUDIO SESSION</span>
                         <span className={styles.liveBadge}>Live</span>
                     </div>
-                    <button className={styles.logoutBtn}>
-                        <LogOut size={18} />
-                        Logout
-                    </button>
+                    <LogoutButton className={styles.logoutBtn} />
                 </div>
             </aside>
 
@@ -194,9 +191,9 @@ export default function AdminDashboard() {
                                     <span>{dashboardData.stats.upcomingSessions} Berlangsung / Mendatang</span>
                                 </div>
                                 <div className={styles.progressBar}>
-                                    <div 
-                                        className={styles.progressFill} 
-                                        style={{ width: dashboardData.stats.totalSessionsToday > 0 ? `${(dashboardData.stats.completedSessions / dashboardData.stats.totalSessionsToday) * 100}%` : '0%' }} 
+                                    <div
+                                        className={styles.progressFill}
+                                        style={{ width: dashboardData.stats.totalSessionsToday > 0 ? `${(dashboardData.stats.completedSessions / dashboardData.stats.totalSessionsToday) * 100}%` : '0%' }}
                                     />
                                 </div>
                             </div>
@@ -263,7 +260,7 @@ export default function AdminDashboard() {
                             <div className={styles.tableControls}>
                                 <div className={styles.tabs}>
                                     {['Semua', 'Hari Ini', 'Menunggu Konfirmasi', 'Lunas'].map(tab => (
-                                        <button 
+                                        <button
                                             key={tab}
                                             onClick={() => setActiveTab(tab)}
                                             className={`${styles.tabBtn} ${activeTab === tab ? styles.activeTab : ''}`}
@@ -274,9 +271,9 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className={styles.searchBox}>
                                     <Search size={16} className={styles.searchIcon} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Cari nama, ID, paket..." 
+                                    <input
+                                        type="text"
+                                        placeholder="Cari nama, ID, paket..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className={styles.searchInput}
@@ -315,7 +312,7 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td>
                                                     <div className={styles.cellPackage}>
-                                                        <Camera size={14} className={styles.pkgIcon}/>
+                                                        <Camera size={14} className={styles.pkgIcon} />
                                                         <div>
                                                             <div className={styles.cellName}>{order.packageType}</div>
                                                             <div className={styles.cellSub}>{order.packageName}</div>
@@ -343,7 +340,7 @@ export default function AdminDashboard() {
                                                 <td>
                                                     <div className={styles.actionBtns}>
                                                         <button className={styles.detailBtn}>Detail</button>
-                                                        <button className={styles.iconBtn}><ClipboardList size={16}/></button>
+                                                        <button className={styles.iconBtn}><ClipboardList size={16} /></button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -358,9 +355,9 @@ export default function AdminDashboard() {
                                 Menampilkan <strong>{dashboardData.pagination.showingStart} - {dashboardData.pagination.showingEnd}</strong> dari <strong>{dashboardData.pagination.totalOrders}</strong> pesanan bulan ini
                             </p>
                             <div className={styles.pageNav}>
-                                <button className={styles.pageBtn} disabled><ChevronLeft size={16}/></button>
+                                <button className={styles.pageBtn} disabled><ChevronLeft size={16} /></button>
                                 <button className={`${styles.pageBtn} ${styles.pageActive}`}>1</button>
-                                <button className={styles.pageBtn} disabled><ChevronRight size={16}/></button>
+                                <button className={styles.pageBtn} disabled><ChevronRight size={16} /></button>
                             </div>
                         </div>
                     </div>

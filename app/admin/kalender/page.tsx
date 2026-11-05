@@ -2,17 +2,18 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { 
-    LayoutDashboard, CalendarDays, LogOut, Calendar, Users, 
-    ChevronLeft, ChevronRight, Lock, Sun, Moon, Wrench, 
+import {
+    LayoutDashboard, CalendarDays, Calendar, Users,
+    ChevronLeft, ChevronRight, Lock, Sun, Moon, Wrench,
     ArrowRight, Info
 } from 'lucide-react';
 import BlockScheduleModal from '@/components/BlockScheduleModal/BlockScheduleModal';
+import LogoutButton from '@/components/LogoutButton';
 import styles from './page.module.css';
 
 export default function CalendarRekapPage() {
     const [selectedRoom, setSelectedRoom] = useState('Semua Room');
-    
+
     // State untuk mengontrol bulan & tahun aktif secara dinamis (Default: Oktober 2026)
     const [viewDate, setViewDate] = useState(() => new Date(2026, 9, 1));
 
@@ -121,10 +122,7 @@ export default function CalendarRekapPage() {
                 </div>
 
                 <div className={styles.sidebarBottom}>
-                    <button className={styles.logoutBtn}>
-                        <LogOut size={18} />
-                        Logout
-                    </button>
+                    <LogoutButton className={styles.logoutBtn} />
                 </div>
             </aside>
 
@@ -156,28 +154,28 @@ export default function CalendarRekapPage() {
                     <div className={styles.pageHeader}>
                         <div>
                             <p className={styles.breadcrumb}>
-                                Admin <ChevronRight size={12} className={styles.bcIcon}/> <strong>Rekap Kalender</strong>
+                                Admin <ChevronRight size={12} className={styles.bcIcon} /> <strong>Rekap Kalender</strong>
                             </p>
                             <p className={styles.subMeta}>SPATIAL BOOKING GRID • Q4 SCHEDULE</p>
-                            <h2 className={styles.pageTitle}>Rekap Kalender<br/>Studio</h2>
+                            <h2 className={styles.pageTitle}>Rekap Kalender<br />Studio</h2>
                         </div>
-                        
+
                         <div className={styles.headerControls}>
                             <div className={styles.monthNav}>
-                                <button onClick={handlePrevMonth} className={styles.iconBtn}><ChevronLeft size={16}/></button>
-                                <span className={styles.monthText}><Calendar size={16}/> <span style={{textTransform: 'capitalize'}}>{currentMonthLabel}</span></span>
-                                <button onClick={handleNextMonth} className={styles.iconBtn}><ChevronRight size={16}/></button>
+                                <button onClick={handlePrevMonth} className={styles.iconBtn}><ChevronLeft size={16} /></button>
+                                <span className={styles.monthText}><Calendar size={16} /> <span style={{ textTransform: 'capitalize' }}>{currentMonthLabel}</span></span>
+                                <button onClick={handleNextMonth} className={styles.iconBtn}><ChevronRight size={16} /></button>
                             </div>
-                            
+
                             {/* Tombol Blokir Jadwal yang memicu Modal */}
                             <button onClick={() => setIsBlockModalOpen(true)} className={styles.blockBtn}>
-                                <Lock size={14}/> + Blokir Jadwal
+                                <Lock size={14} /> + Blokir Jadwal
                             </button>
 
                             <div className={styles.roomFilter}>
                                 {['Semua Room', 'Room A', 'Room B'].map(room => (
-                                    <button 
-                                        key={room} 
+                                    <button
+                                        key={room}
                                         onClick={() => setSelectedRoom(room)}
                                         className={`${styles.filterBtn} ${selectedRoom === room ? styles.filterActive : ''}`}
                                     >
@@ -195,23 +193,23 @@ export default function CalendarRekapPage() {
                                 <p className={styles.statLabel}>TOTAL SESI TERJADWAL</p>
                                 <h3 className={styles.statValue}>0 <span className={styles.statSub}>Sesi Dikonfirmasi</span></h3>
                             </div>
-                            <div className={styles.statIconBox}><CalendarDays size={20}/></div>
+                            <div className={styles.statIconBox}><CalendarDays size={20} /></div>
                         </div>
                         <div className={styles.statCard}>
                             <div>
                                 <p className={styles.statLabel}>ROOM A OKUPANSI</p>
                                 <h3 className={styles.statValue}>0% <span className={styles.badgeHigh}>Optimal</span></h3>
-                                <div className={styles.progressBar}><div className={styles.progressFill} style={{width: '0%', background: '#000'}}/></div>
+                                <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '0%', background: '#000' }} /></div>
                             </div>
-                            <div className={styles.statIconBoxLight}><Sun size={20}/></div>
+                            <div className={styles.statIconBoxLight}><Sun size={20} /></div>
                         </div>
                         <div className={styles.statCard}>
                             <div>
                                 <p className={styles.statLabel}>ROOM B OKUPANSI</p>
                                 <h3 className={styles.statValue}>0% <span className={styles.badgeOptimal}>Optimal</span></h3>
-                                <div className={styles.progressBar}><div className={styles.progressFill} style={{width: '0%', background: '#94a3b8'}}/></div>
+                                <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '0%', background: '#94a3b8' }} /></div>
                             </div>
-                            <div className={styles.statIconBoxLight}><Moon size={20}/></div>
+                            <div className={styles.statIconBoxLight}><Moon size={20} /></div>
                         </div>
                     </div>
 
@@ -220,7 +218,7 @@ export default function CalendarRekapPage() {
                         <div className={styles.daysHeader}>
                             <span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span className={styles.textBold}>SAB</span><span className={styles.textBold}>MIN</span>
                         </div>
-                        
+
                         <div className={styles.grid}>
                             {calendarCells.map((cell, idx) => {
                                 const isPrevNext = cell.type !== 'curr';
@@ -231,25 +229,25 @@ export default function CalendarRekapPage() {
                                             <span className={isPrevNext ? styles.dateNumDisabled : styles.dateNum}>
                                                 {String(cell.date).padStart(2, '0')}
                                             </span>
-                                            {!isPrevNext && cell.dot === 'normal' && <div className={styles.dotNormal}/>}
-                                            {!isPrevNext && cell.dot === 'dense' && <div className={styles.dotDense}/>}
-                                            {!isPrevNext && cell.dot === 'maintenance' && <div className={styles.dotMaintenance}/>}
+                                            {!isPrevNext && cell.dot === 'normal' && <div className={styles.dotNormal} />}
+                                            {!isPrevNext && cell.dot === 'dense' && <div className={styles.dotDense} />}
+                                            {!isPrevNext && cell.dot === 'maintenance' && <div className={styles.dotMaintenance} />}
                                         </div>
 
                                         <div className={styles.cellBottom}>
                                             {cell.status && <span className={styles.cellStatus}>{cell.status}</span>}
-                                            
+
                                             {cell.isMaintenance && (
                                                 <span className={styles.badgePerawatan}>PERAWATAN</span>
                                             )}
-                                            
+
                                             {cell.sessions !== undefined && cell.sessions > 0 && !cell.isMaintenance && (
                                                 <Link href="/admin/kalender/agenda" className={styles.sessionBtn} style={{ textDecoration: 'none' }}>
-                                                    {cell.sessions} Sesi <ArrowRight size={14}/>
+                                                    {cell.sessions} Sesi <ArrowRight size={14} />
                                                 </Link>
                                             )}
                                         </div>
-                                        {cell.isMaintenance && <Wrench size={14} className={styles.wrenchIcon}/>}
+                                        {cell.isMaintenance && <Wrench size={14} className={styles.wrenchIcon} />}
                                     </div>
                                 );
                             })}
@@ -258,19 +256,19 @@ export default function CalendarRekapPage() {
 
                     <div className={styles.legendFooter}>
                         <div className={styles.legends}>
-                            <div className={styles.legendItem}><div className={styles.dotNormal}/> 1-3 Sesi (Tersedia)</div>
-                            <div className={styles.legendItem}><div className={styles.dotDense}/> 4-6 Sesi (Padat)</div>
-                            <div className={styles.legendItem}><div className={styles.dotMaintenance}/> Maintenance / Libur</div>
+                            <div className={styles.legendItem}><div className={styles.dotNormal} /> 1-3 Sesi (Tersedia)</div>
+                            <div className={styles.legendItem}><div className={styles.dotDense} /> 4-6 Sesi (Padat)</div>
+                            <div className={styles.legendItem}><div className={styles.dotMaintenance} /> Maintenance / Libur</div>
                         </div>
                         <div className={styles.legendNote}>
-                            <Info size={14}/> Klik tanggal untuk melihat rincian agenda harian penuh.
+                            <Info size={14} /> Klik tanggal untuk melihat rincian agenda harian penuh.
                         </div>
                     </div>
                 </div>
             </main>
 
             {/* Modal Pop-up Blokir Jadwal */}
-            <BlockScheduleModal 
+            <BlockScheduleModal
                 isOpen={isBlockModalOpen}
                 onClose={() => setIsBlockModalOpen(false)}
                 onConfirm={handleSaveBlock}

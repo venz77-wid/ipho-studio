@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { User } from 'lucide-react';
+import LogoutButton from '@/components/LogoutButton';
 import styles from './Navbar.module.css';
 
 interface NavLink {
@@ -51,9 +51,7 @@ export default function Navbar(): React.JSX.Element {
                     ))}
                 </nav>
 
-                <button type="button" className={styles.profile} aria-label="Profil pengguna">
-                    <User size={16} strokeWidth={2} />
-                </button>
+                <LogoutButton className={styles.logoutButton} />
             </div>
         </header>
     );

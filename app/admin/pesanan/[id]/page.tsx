@@ -2,13 +2,14 @@
 
 import React, { useState, use } from 'react';
 import Link from 'next/link';
-import { 
-    LayoutDashboard, CalendarDays, LogOut, Calendar, Users, 
-    ArrowLeft, Printer, User, CheckCircle2, Aperture, Clock, 
-    AlignLeft, Receipt, ExternalLink, Zap, MessageCircle, 
+import {
+    LayoutDashboard, CalendarDays, Calendar, Users,
+    ArrowLeft, Printer, User, CheckCircle2, Aperture, Clock,
+    AlignLeft, Receipt, ExternalLink, Zap, MessageCircle,
     Check, FileText, ChevronRight
 } from 'lucide-react';
 import RescheduleModal from '@/components/RescheduleModal/RescheduleModal';
+import LogoutButton from '@/components/LogoutButton';
 import styles from './page.module.css';
 
 const formatRupiah = (angka: number) => {
@@ -30,7 +31,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         createdAt: "20 Okt 2025",
         scheduleDate: "Sabtu, 28 Okt 2025",
         scheduleTime: "13:30 - 14:30 WIB",
-        
+
         client: {
             name: "Nadia Larasati",
             whatsapp: "+62 812-3456-7890",
@@ -38,7 +39,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             email: "nadia.larasati@gmail.com",
             registeredOnline: true,
         },
-        
+
         session: {
             slot: "SLOT #04",
             package: "Editorial Portrait & Wisuda",
@@ -68,7 +69,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             paid: 450000,
             remaining: 0
         },
-        
+
         allocation: {
             date: "28 Okt 2025",
             start: "13:30",
@@ -117,10 +118,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div className={styles.sidebarBottom}>
-                    <button className={styles.logoutBtn}>
-                        <LogOut size={18} />
-                        Logout
-                    </button>
+                    <LogoutButton className={styles.logoutBtn} />
                 </div>
             </aside>
 
@@ -187,12 +185,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <div className={styles.contentCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.cardTitleBox}>
-                                        <div className={styles.iconBox}><User size={16}/></div>
+                                        <div className={styles.iconBox}><User size={16} /></div>
                                         <h3 className={styles.cardTitle}>Profil & Informasi Klien</h3>
                                     </div>
                                     {orderData.client.registeredOnline && <span className={styles.tagLight}>TERDAFTAR ONLINE</span>}
                                 </div>
-                                
+
                                 <div className={styles.profileGrid}>
                                     <div>
                                         <p className={styles.fieldLabel}>NAMA LENGKAP</p>
@@ -221,7 +219,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <div className={styles.contentCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.cardTitleBox}>
-                                        <div className={styles.iconBox}><Aperture size={16}/></div>
+                                        <div className={styles.iconBox}><Aperture size={16} /></div>
                                         <h3 className={styles.cardTitle}>Rincian Sesi Pemesanan</h3>
                                     </div>
                                     <span className={styles.tagBlue}>{orderData.session.slot}</span>
@@ -277,10 +275,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <div className={styles.contentCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.cardTitleBox}>
-                                        <div className={styles.iconBox}><Receipt size={16}/></div>
+                                        <div className={styles.iconBox}><Receipt size={16} /></div>
                                         <h3 className={styles.cardTitle}>Rincian Finansial</h3>
                                     </div>
-                                    <span className={styles.badgeBlack}><Check size={12}/> LUNAS</span>
+                                    <span className={styles.badgeBlack}><Check size={12} /> LUNAS</span>
                                 </div>
 
                                 <div className={styles.financeMeta}>
@@ -303,7 +301,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         <div key={idx} className={styles.fBreakdownRow}>
                                             <span className={styles.textNormal}>{item.label}</span>
                                             <span className={styles.textNormal}>
-                                                {item.isPromo ? <span className={styles.textGreen}>Rp 0 <br/>(Promo)</span> : formatRupiah(item.value)}
+                                                {item.isPromo ? <span className={styles.textGreen}>Rp 0 <br />(Promo)</span> : formatRupiah(item.value)}
                                             </span>
                                         </div>
                                     ))}
@@ -326,30 +324,30 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 </div>
 
                                 <button className={styles.linkBtn}>
-                                    <ExternalLink size={12}/> Lihat Log Transaksi Gateway (Midtrans)
+                                    <ExternalLink size={12} /> Lihat Log Transaksi Gateway (Midtrans)
                                 </button>
                             </div>
 
                             <div className={styles.contentCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.cardTitleBox}>
-                                        <div className={styles.iconBox}><Zap size={16}/></div>
+                                        <div className={styles.iconBox}><Zap size={16} /></div>
                                         <h3 className={styles.cardTitle}>Aksi Operasional Studio</h3>
                                     </div>
                                 </div>
                                 <div className={styles.actionGrid}>
                                     <button className={styles.btnPrimary}>
-                                        <MessageCircle size={16}/> Hubungi WhatsApp Klien
+                                        <MessageCircle size={16} /> Hubungi WhatsApp Klien
                                     </button>
                                     {/* Tombol pemicu Modal Reschedule */}
                                     <button onClick={() => setIsRescheduleOpen(true)} className={styles.btnOutline}>
-                                        <Calendar size={16}/> Jadwalkan Ulang (Reschedule)
+                                        <Calendar size={16} /> Jadwalkan Ulang (Reschedule)
                                     </button>
                                     <button className={styles.btnSoft}>
-                                        <CheckCircle2 size={16}/> Tandai Sesi Selesai
+                                        <CheckCircle2 size={16} /> Tandai Sesi Selesai
                                     </button>
                                     <button className={styles.btnGhost}>
-                                        <FileText size={16}/> Cetak Surat Jalan / Work Order Fotografer
+                                        <FileText size={16} /> Cetak Surat Jalan / Work Order Fotografer
                                     </button>
                                 </div>
                             </div>
@@ -359,7 +357,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </main>
 
             {/* Modal Reschedule Dinamis */}
-            <RescheduleModal 
+            <RescheduleModal
                 isOpen={isRescheduleOpen}
                 onClose={() => setIsRescheduleOpen(false)}
                 orderInfo={{
