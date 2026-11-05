@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, ArrowRight, Lock, CheckCircle2, MailCheck } from 'lucide-react';
 import { register } from './actions';
 import styles from '../login/page.module.css';
+import GoogleButton from '@/components/GoogleButton';
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -100,6 +101,14 @@ export default function RegisterPage() {
                                 <p className={styles.formSubtitle}>
                                     Isi data berikut untuk membuat akun pelanggan.
                                 </p>
+                            </div>
+
+                            <div className={styles.socialSingle}>
+                                <GoogleButton className={styles.socialBtn} label="Daftar dengan Google" onError={setErrorMessage} />
+                            </div>
+
+                            <div className={styles.divider}>
+                                <span>ATAU DENGAN EMAIL</span>
                             </div>
 
                             <form onSubmit={handleRegister} className={styles.form} aria-busy={isLoading}>

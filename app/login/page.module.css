@@ -391,3 +391,17 @@
     margin: auto 0;
     color: #0f172a;
 }
+
+/* Tombol Google + pemisah */
+.socialSingle {
+    margin-bottom: 20px;
+}
+
+.socialSingle .socialBtn {
+    width: 100%;
+}
+
+.socialBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
