@@ -1,0 +1,286 @@
+.main {
+    background: #fafafe;
+    color: #0a0a0a;
+    min-height: 70vh;
+    padding: 48px 0 80px;
+}
+
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.eyebrow {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #52525b;
+    margin-bottom: 8px;
+}
+
+.head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.h1 {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+.lead {
+    margin: 8px 0 28px;
+    font-size: 14px;
+    color: #3f3f46;
+}
+
+.refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid #e4e4ea;
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.noticeOk,
+.noticeInfo {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.noticeOk {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.noticeInfo {
+    background: #eef0fb;
+    color: #2f3a8f;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    height: 34px;
+    padding: 0 18px;
+    border: 1px solid #ececf1;
+    border-radius: 999px;
+    background: #fff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.tabOn {
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    color: #fff;
+}
+
+.state {
+    font-size: 13px;
+    color: #52525b;
+}
+
+.empty {
+    padding: 56px 0;
+    text-align: center;
+    font-size: 14px;
+    color: #52525b;
+}
+
+.empty p {
+    margin: 0 0 16px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #ececf1;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(10, 10, 30, 0.04);
+}
+
+.thumb {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f1f1f5;
+}
+
+.thumbImg {
+    object-fit: cover;
+}
+
+.info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #dfe3fb;
+    font-size: 10px;
+    font-weight: 600;
+    color: #2f3a8f;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.bWaiting {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.bActive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.bDone {
+    background: #e4e4e7;
+    color: #3f3f46;
+}
+
+.bFailed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.title {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #27272a;
+}
+
+.meta svg:nth-of-type(2) {
+    margin-left: 10px;
+}
+
+.small {
+    margin: 0 0 6px;
+    font-size: 11px;
+    color: #71717a;
+    word-break: break-all;
+}
+
+.price {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.price span {
+    font-size: 11px;
+    font-weight: 400;
+    color: #52525b;
+}
+
+.actions {
+    flex-shrink: 0;
+}
+
+.btnDark,
+.btnLight {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btnDark {
+    background: #0a0a0a;
+    color: #fff;
+}
+
+.btnLight {
+    background: #fff;
+    color: #0a0a0a;
+    border: 1px solid #e4e4ea;
+}
+
+@media (max-width: 700px) {
+    .card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .thumb {
+        width: 100%;
+        height: 180px;
+    }
+
+    .actions,
+    .btnDark,
+    .btnLight {
+        width: 100%;
+    }
+
+    .h1 {
+        font-size: 32px;
+    }
+}

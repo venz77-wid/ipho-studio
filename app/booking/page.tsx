@@ -8,11 +8,14 @@ import SchedulePicker from '@/components/SchedulePicker/SchedulePicker';
 import ContactForm from '@/components/ContactForm/ContactForm';
 import PaymentOptions from '@/components/PaymentOptions/PaymentOptions';
 import OrderSummary from '@/components/OrderSummary/OrderSummary';
+import ConfirmationModal from '@/components/ConfirmationModal/ConfirmationModal';
+
 
 // TAMBAHAN 1: Import getBookedSlots
-import { getPackageBySlug, createBooking, getBookedSlots } from '@/lib/bookings';
+import { getPackageBySlug, getBookedSlots } from '@/lib/bookings';
 import type { CatalogPackage } from '@/lib/catalogTypes';
 import type { BookingFormData, TimeSlot, PaymentScheme, PaymentMethod } from '@/lib/bookingTypes';
+import { saveOrderId } from '@/lib/myBookingsStorage';
 
 import styles from './page.module.css';
 
@@ -37,10 +40,12 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
     // TAMBAHAN 2: State untuk menyimpan jam yang sudah dipesan
     const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
     const [formData, setFormData] = useState<BookingFormData>({
-    packageSlug,
-    bookingDate: '2026-10-28', 
-    startTime: '',
+        packageSlug,
+        bookingDate: '2026-10-28',
+        startTime: '',
         endTime: '',
         fullName: '',
         whatsapp: '',
@@ -71,7 +76,7 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
             try {
                 const slots = await getBookedSlots(selectedDate);
                 setBookedSlots(slots);
-                
+
                 // Jika jam yang sedang dipilih ternyata sudah penuh di tanggal yang baru, reset pilihannya
                 if (selectedSlot && slots.includes(selectedSlot.startTime)) {
                     setSelectedSlot(null);
@@ -98,7 +103,8 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
         }));
     };
 
-    const handleSubmit = async () => {
+    // Klik "Konfirmasi & Lanjut Bayar": cek isian, lalu buka popup konfirmasi
+    const handleOpenConfirm = () => {
         if (!packageData || !selectedSlot) {
             alert('Silakan pilih jadwal terlebih dahulu.');
             return;
@@ -109,25 +115,37 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
             return;
         }
 
+        setIsConfirmOpen(true);
+    };
+
+    const handleSubmit = async () => {
+        if (!packageData || !selectedSlot) return;
+
         setIsSubmitting(true);
         try {
-            const paidAmount = paymentScheme === 'dp' ? packageData.price * 0.3 : packageData.price;
-
-            await createBooking({
-                ...formData,
-                packageId: packageData.id,
-                bookingDate: selectedDate,
-                paymentScheme,
-                paymentMethod,
-                totalAmount: packageData.price,
-                paidAmount,
+            const res = await fetch('/api/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    packageSlug: packageData.slug,
+                    bookingDate: selectedDate,
+                    startTime: selectedSlot.startTime,
+                    endTime: selectedSlot.endTime,
+                    fullName: formData.fullName,
+                    whatsapp: formData.whatsapp,
+                    email: formData.email,
+                    specialNotes: formData.specialNotes,
+                    paymentScheme,
+                    paymentMethod,
+                }),
             });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Gagal membuat pembayaran.');
 
-            alert('Pemesanan berhasil dibuat! Anda akan diarahkan ke instruksi pembayaran.');
+            saveOrderId(data.orderId);
+            window.location.href = data.redirectUrl; // pindah ke halaman Midtrans
         } catch (err: unknown) {
-            const error = err as Error;
-            alert(error.message || 'Terjadi kesalahan saat memproses pesanan.');
-        } finally {
+            alert((err as Error).message || 'Terjadi kesalahan saat memproses pesanan.');
             setIsSubmitting(false);
         }
     };
@@ -196,13 +214,30 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
                                 selectedDate={selectedDate}
                                 selectedSlot={selectedSlot}
                                 paymentScheme={paymentScheme}
-                                onConfirm={handleSubmit}
+                                onConfirm={handleOpenConfirm}
                                 isSubmitting={isSubmitting}
                             />
                         </div>
                     </div>
                 </div>
             </main>
+            {selectedSlot && (
+                <ConfirmationModal
+                    open={isConfirmOpen}
+                    packageData={packageData}
+                    selectedDate={selectedDate}
+                    selectedSlot={selectedSlot}
+                    formData={formData}
+                    paymentScheme={paymentScheme}
+                    paymentMethod={paymentMethod}
+                    amountDue={
+                        paymentScheme === 'dp' ? Math.round(packageData.price * 0.3) : packageData.price
+                    }
+                    isSubmitting={isSubmitting}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={handleSubmit}
+                />
+            )}
             <Footer />
         </>
     );

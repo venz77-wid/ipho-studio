@@ -14,9 +14,9 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
     { label: 'Beranda', href: '/' },
     { label: 'Katalog Paket', href: '/katalog' },
+    { label: 'Paket Saya', href: '/paket-saya' },
     { label: 'Portofolio', href: '/portofolio' },
-    { label: 'Tentang Studio', href: '/tentang' },
-    { label: 'Kontak', href: '/kontak' },
+    { label: 'Tentang & Kontak', href: '/tentang' },
 ];
 
 export default function Navbar(): React.JSX.Element {
