@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import type { BookingFormData, TimeSlot } from './bookingTypes';
 import type { CatalogPackage, CapacityIcon } from './catalogTypes';
+import { BookedRange } from './scheduleUtils';
 
 export async function getPackageBySlug(slug: string): Promise<CatalogPackage | null> {
     const { data, error } = await supabase
@@ -34,17 +35,16 @@ export async function getPackageBySlug(slug: string): Promise<CatalogPackage | n
     };
 }
 
-export async function getBookedSlots(date: string): Promise<string[]> {
-    const { data, error } = await supabase
-        .from('bookings')
-        .select('start_time')
-        .eq('booking_date', date)
-        .in('status', ['pending', 'confirmed']);
-
-    if (error || !data) return [];
-
-    // Solusi: Tambahkan definisi tipe { start_time: string } pada parameter 'b'
-    return data.map((b: { start_time: string }) => b.start_time.slice(0, 5));
+export async function getBookedRanges(date: string): Promise<BookedRange[]> {
+    try {
+        const res = await fetch(`/api/booked-slots?date=${encodeURIComponent(date)}`, { cache: 'no-store' });
+        if (!res.ok) return [];
+        const data = (await res.json()) as { ranges?: BookedRange[] };
+        return data.ranges ?? [];
+    } catch (err) {
+        console.error('Gagal mengecek ketersediaan slot:', err);
+        return [];
+    }
 }
 
 // export async function createBooking(

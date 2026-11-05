@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { SLOT_START_TIMES, calculateEndTime, isSlotInPast, overlapsAny } from '@/lib/scheduleUtils';
 import {
     ENABLED_PAYMENTS,
     SNAP_EXPIRY_MINUTES,
@@ -45,16 +46,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (invalid) return fail(400, invalid);
     const b = body as CreateBody;
 
+    if (!SLOT_START_TIMES.some((s) => s.startTime === b.startTime)) return fail(400, 'Jam sesi tidak valid.');
+    if (isSlotInPast(b.bookingDate, b.startTime)) return fail(400, 'Jadwal yang dipilih sudah lewat. Pilih jam lain.');
+
     // 1. Harga SELALU dari database, bukan dari browser
     const { data: pkg } = await supabaseAdmin
         .from('packages')
-        .select('id, slug, title, price')
+        .select('id, slug, title, price, duration_minutes')
         .eq('slug', b.packageSlug)
         .eq('is_active', true)
         .maybeSingle();
     if (!pkg) return fail(404, 'Paket tidak ditemukan.');
 
     const amountDue = b.paymentScheme === 'dp' ? Math.round(pkg.price * 0.3) : pkg.price;
+    // Jam selesai dihitung server dari durasi paket (tidak memercayai browser)
+    const endTime = calculateEndTime(b.startTime, pkg.duration_minutes);
 
     // 2. Bebaskan slot dari pesanan pending lama yang sudah tidak berlaku
     const cutoff = new Date(Date.now() - STALE_MS).toISOString();
@@ -62,7 +68,6 @@ export async function POST(req: Request): Promise<NextResponse> {
         .from('bookings')
         .select('id, order_id, created_at')
         .eq('booking_date', b.bookingDate)
-        .eq('start_time', b.startTime)
         .eq('status', 'pending')
         .or(`created_at.lt.${cutoff},order_id.is.null`);
     for (const r of stale ?? []) {
@@ -71,6 +76,27 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // 3. Simpan pesanan (pending). Indeks unik di database mencegah slot ganda.
+    // Cek bentrok: jam yang beririsan tidak boleh dipesan dua kali (satu studio)
+
+    const { data: active } = await supabaseAdmin
+
+        .from('bookings')
+
+        .select('start_time, end_time')
+
+        .eq('booking_date', b.bookingDate)
+
+        .in('status', ['pending', 'confirmed']);
+
+    const taken = (active ?? []).map((x) => ({ start: String(x.start_time).slice(0, 5), end: String(x.end_time).slice(0, 5) }));
+
+    if (overlapsAny(b.startTime, endTime, taken)) {
+
+        return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
+
+    }
+
+
     const orderId = buildOrderId();
     const { data: booking, error: insertError } = await supabaseAdmin
         .from('bookings')
@@ -79,7 +105,7 @@ export async function POST(req: Request): Promise<NextResponse> {
             package_id: pkg.id,
             booking_date: b.bookingDate,
             start_time: b.startTime,
-            end_time: b.endTime,
+            end_time: endTime,
             full_name: b.fullName.trim(),
             whatsapp: b.whatsapp.trim(),
             email: b.email.trim(),
@@ -94,7 +120,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         .single();
 
     if (insertError || !booking) {
-        if (insertError?.code === '23505') return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
+        if ((insertError?.code === '23505' || insertError?.code === '23P01')) return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
         return fail(500, 'Gagal menyimpan pesanan.');
     }
 
