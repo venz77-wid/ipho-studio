@@ -1,0 +1,363 @@
+.wrapper {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 1000px;
+    border-radius: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+@media (min-width: 800px) {
+    .card {
+        grid-template-columns: 420px 1fr;
+        min-height: 600px;
+    }
+}
+
+/* Panel Kiri */
+.leftPanel {
+    background: linear-gradient(180deg, #2b3445 0%, #3a475d 100%);
+    padding: 40px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brandWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.portalBadge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+
+.leftContent {
+    margin-top: 60px;
+    margin-bottom: 60px;
+}
+
+.subtitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.heading {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 16px 0;
+}
+
+.description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    max-width: 90%;
+}
+
+.leftFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 24px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.secureText {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #10b981;
+}
+
+.version {
+    font-family: monospace;
+}
+
+/* Panel Kanan */
+.rightPanel {
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+}
+
+.statusRow {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 32px;
+}
+
+.onlineStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.5px;
+}
+
+.greenDot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+}
+
+.formHeader {
+    margin-bottom: 24px;
+}
+
+.areaBadge {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.formTitle {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.formSubtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.socialLogins {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.socialBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.socialBtn:hover {
+    background: #f8fafc;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+    padding: 0 12px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.labelRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.5px;
+}
+
+.forgotLink {
+    font-size: 12px;
+    color: #64748b;
+    text-decoration: none;
+}
+
+.forgotLink:hover {
+    color: #0f172a;
+    text-decoration: underline;
+}
+
+.passwordWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    border-color: #0f172a;
+}
+
+.input::placeholder {
+    color: #cbd5e1;
+}
+
+.eyeBtn {
+    position: absolute;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.eyeBtn:hover {
+    color: #475569;
+}
+
+.submitBtn {
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+
+.submitBtn:hover {
+    background: #1e293b;
+}
+
+.actionLinks {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.linkItem, .linkItemAlt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.linkItem {
+    color: #0f172a;
+}
+
+.linkItemAlt {
+    color: #64748b;
+}
+
+.linkItem:hover, .linkItemAlt:hover {
+    text-decoration: underline;
+}
+
+.rightFooter {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+@media (max-width: 800px) {
+    .rightPanel {
+        padding: 32px 24px;
+    }
+    .actionLinks {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+}
