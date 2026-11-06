@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { SLOT_START_TIMES, calculateEndTime, isSlotInPast, overlapsAny } from '@/lib/scheduleUtils';
+import { SLOT_START_TIMES, calculateEndTime, isSlotInPast } from '@/lib/scheduleUtils';
+import { isBookingDate, loadRoomAvailability } from '@/lib/roomAvailability';
 import {
     ENABLED_PAYMENTS,
     SNAP_EXPIRY_MINUTES,
-    STALE_MS,
-    expireTransaction,
     buildOrderId,
     createSnapTransaction,
-    syncPendingBooking,
+    syncStaleBookingsForDate,
 } from '@/lib/midtrans';
 import type { PaymentMethod, PaymentScheme } from '@/lib/bookingTypes';
 
@@ -16,7 +15,7 @@ interface CreateBody {
     packageSlug: string;
     bookingDate: string;
     startTime: string;
-    endTime: string;
+    requestId: string;
     fullName: string;
     whatsapp: string;
     email: string;
@@ -28,15 +27,20 @@ interface CreateBody {
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 
 function validate(b: Partial<CreateBody>): string | null {
-    if (!b.packageSlug) return 'Paket tidak valid.';
-    if (!b.bookingDate || !/^\d{4}-\d{2}-\d{2}$/.test(b.bookingDate)) return 'Tanggal tidak valid.';
-    if (!b.startTime || !/^\d{2}:\d{2}$/.test(b.startTime)) return 'Jam mulai tidak valid.';
-    if (!b.endTime || !/^\d{2}:\d{2}$/.test(b.endTime)) return 'Jam selesai tidak valid.';
-    if (!b.fullName || b.fullName.trim().length < 2) return 'Nama lengkap wajib diisi.';
-    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) return 'Email tidak valid.';
-    if (!b.whatsapp || b.whatsapp.replace(/\D/g, '').length < 9) return 'Nomor WhatsApp tidak valid.';
+    if (typeof b.packageSlug !== 'string' || !b.packageSlug) return 'Paket tidak valid.';
+    if (typeof b.bookingDate !== 'string' || !isBookingDate(b.bookingDate)) return 'Tanggal tidak valid.';
+    if (typeof b.startTime !== 'string' || !SLOT_START_TIMES.some((s) => s.startTime === b.startTime)) {
+        return 'Jam sesi tidak valid.';
+    }
+    if (typeof b.requestId !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(b.requestId)) {
+        return 'Percobaan checkout tidak valid. Muat ulang halaman booking.';
+    }
+    if (typeof b.fullName !== 'string' || b.fullName.trim().length < 2) return 'Nama lengkap wajib diisi.';
+    if (typeof b.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email.trim())) return 'Email tidak valid.';
+    if (typeof b.whatsapp !== 'string' || b.whatsapp.replace(/\D/g, '').length < 9) return 'Nomor WhatsApp tidak valid.';
+    if (b.specialNotes != null && typeof b.specialNotes !== 'string') return 'Catatan tidak valid.';
     if (b.paymentScheme !== 'dp' && b.paymentScheme !== 'full') return 'Skema pembayaran tidak valid.';
-    if (!b.paymentMethod || !(b.paymentMethod in ENABLED_PAYMENTS)) return 'Metode pembayaran tidak valid.';
+    if (typeof b.paymentMethod !== 'string' || !Object.hasOwn(ENABLED_PAYMENTS, b.paymentMethod)) return 'Metode pembayaran tidak valid.';
     return null;
 }
 
@@ -47,100 +51,105 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (invalid) return fail(400, invalid);
     const b = body as CreateBody;
 
-    if (!SLOT_START_TIMES.some((s) => s.startTime === b.startTime)) return fail(400, 'Jam sesi tidak valid.');
-    if (isSlotInPast(b.bookingDate, b.startTime)) return fail(400, 'Jadwal yang dipilih sudah lewat. Pilih jam lain.');
+    if (isSlotInPast(b.bookingDate, b.startTime)) return fail(400, 'Jadwal sudah lewat. Pilih jam lain.');
 
-    // 1. Harga SELALU dari database, bukan dari browser
-    const { data: pkg } = await supabaseAdmin
+    try {
+        return await createPayment(b);
+    } catch (error) {
+        console.error('Gagal memulai checkout:', error);
+        return fail(500, 'Gagal memulai checkout. Coba lagi.');
+    }
+}
+
+async function createPayment(b: CreateBody): Promise<NextResponse> {
+    const { data: pkg, error: packageError } = await supabaseAdmin
         .from('packages')
         .select('id, slug, title, price, duration_minutes')
         .eq('slug', b.packageSlug)
         .eq('is_active', true)
         .maybeSingle();
+    if (packageError) throw packageError;
     if (!pkg) return fail(404, 'Paket tidak ditemukan.');
 
     const amountDue = b.paymentScheme === 'dp' ? Math.round(pkg.price * 0.3) : pkg.price;
-    // Jam selesai dihitung server dari durasi paket (tidak memercayai browser)
     const endTime = calculateEndTime(b.startTime, pkg.duration_minutes);
+    const orderId = buildOrderId(b.requestId);
+    const email = b.email.trim();
+    const packageId = pkg.id;
 
-    // 2. Bebaskan slot dari pesanan pending lama yang sudah tidak berlaku
-    const cutoff = new Date(Date.now() - STALE_MS).toISOString();
-    const { data: stale } = await supabaseAdmin
-        .from('bookings')
-        .select('id, order_id, created_at')
-        .eq('booking_date', b.bookingDate)
-        .eq('status', 'pending')
-        .or(`created_at.lt.${cutoff},order_id.is.null`);
-    for (const r of stale ?? []) {
-        try {
-            if (r.order_id) await syncPendingBooking(r.order_id, r.created_at);
-            else await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('id', r.id);
-        } catch (e) {
-            console.error('Gagal membersihkan pesanan lama:', e);
+    async function findExistingOrder(): Promise<NextResponse | null> {
+        const { data, error } = await supabaseAdmin.from('bookings')
+            .select('status, payment_url, midtrans_status, email, package_id, booking_date, start_time, payment_scheme, payment_method')
+            .eq('order_id', orderId).maybeSingle();
+        if (error) throw error;
+        if (!data) return null;
+
+        if (data.email !== email || data.package_id !== packageId ||
+            data.booking_date !== b.bookingDate || data.start_time.slice(0, 5) !== b.startTime ||
+            data.payment_scheme !== b.paymentScheme || data.payment_method !== b.paymentMethod) {
+            return fail(409, 'Data percobaan checkout tidak cocok. Muat ulang halaman booking.');
         }
-    }
 
-    // Pesanan yang sama milik pemesan ini masih menunggu bayar (mis. menekan Back dari halaman Midtrans):
-    // pakai ulang link pembayarannya, jangan dianggap bentrok dengan orang lain.
-    const { data: own } = await supabaseAdmin
-        .from('bookings')
-        .select('order_id, payment_url, package_id, payment_scheme, payment_method')
-        .eq('booking_date', b.bookingDate)
-        .eq('start_time', b.startTime)
-        .eq('status', 'pending')
-        .eq('email', b.email.trim())
-        .gte('created_at', cutoff)
-        .not('payment_url', 'is', null);
-    for (const o of own ?? []) {
-        if (o.package_id === pkg.id && o.payment_scheme === b.paymentScheme && o.payment_method === b.paymentMethod) {
-            return NextResponse.json({ orderId: o.order_id, redirectUrl: o.payment_url });
+        if (data.midtrans_status === 'paid_room_conflict') {
+            return NextResponse.json({ orderId }, { status: 200 });
         }
-        // Pilihan berbeda: tutup pesanan lama, lalu buat yang baru
-        await expireTransaction(o.order_id);
-        await supabaseAdmin.from('bookings').update({ status: 'expired' }).eq('order_id', o.order_id).eq('status', 'pending');
+        if (data.status === 'pending' && data.payment_url) {
+            return NextResponse.json({ orderId, redirectUrl: data.payment_url });
+        }
+        if (data.status === 'confirmed') return NextResponse.json({ orderId });
+        if (data.status === 'pending') {
+            return NextResponse.json({ orderId, error: 'Pembayaran masih diproses. Tunggu sebentar lalu coba lagi.' }, { status: 409 });
+        }
+        return NextResponse.json({
+            error: 'Pesanan ini sudah berakhir. Tekan lanjut bayar lagi untuk membuat pesanan baru.',
+            retryWithNewRequest: true,
+        }, { status: 409 });
     }
 
-    // 3. Simpan pesanan (pending). Indeks unik di database mencegah slot ganda.
-    // Cek bentrok: jam yang beririsan tidak boleh dipesan dua kali (satu studio)
+    await syncStaleBookingsForDate(b.bookingDate);
+    const existing = await findExistingOrder();
+    if (existing) return existing;
 
-    const { data: active } = await supabaseAdmin
-        .from('bookings')
-        .select('start_time, end_time')
-        .eq('booking_date', b.bookingDate)
-        .in('status', ['pending', 'confirmed']);
-
-    const taken = (active ?? []).map((x) => ({ start: String(x.start_time).slice(0, 5), end: String(x.end_time).slice(0, 5) }));
-
-    if (overlapsAny(b.startTime, endTime, taken)) {
-        return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
-    }
-
-
-    const orderId = buildOrderId();
-    const { data: booking, error: insertError } = await supabaseAdmin
-        .from('bookings')
-        .insert({
+    const availableRooms = await loadRoomAvailability(b.bookingDate);
+    let bookingId: string | undefined;
+    for (const room of availableRooms(b.startTime, endTime)) {
+        const reserveRoom = () => supabaseAdmin.from('bookings').insert({
             order_id: orderId,
             package_id: pkg.id,
+            room_id: room.id,
             booking_date: b.bookingDate,
             start_time: b.startTime,
             end_time: endTime,
             full_name: b.fullName.trim(),
             whatsapp: b.whatsapp.trim(),
-            email: b.email.trim(),
+            email,
             special_notes: b.specialNotes?.trim() || null,
             payment_scheme: b.paymentScheme,
             payment_method: b.paymentMethod,
             total_amount: pkg.price,
             paid_amount: amountDue,
             status: 'pending',
-        })
-        .select('id')
-        .single();
+        }).select('id').single();
 
-    if (insertError || !booking) {
-        if ((insertError?.code === '23505' || insertError?.code === '23P01')) return fail(409, 'Maaf, jam tersebut baru saja dipesan orang lain. Pilih jam lain.');
-        return fail(500, 'Gagal menyimpan pesanan.');
+        let result = await reserveRoom();
+        // Dua transaksi bersamaan bisa membuat PostgreSQL membatalkan salah satunya.
+        if (result.error?.code === '40P01') result = await reserveRoom();
+        const { data, error } = result;
+
+        if (!error) {
+            bookingId = data.id;
+            break;
+        }
+        if (error.code !== '23P01' && error.code !== '23505') throw error;
+        const concurrentOrder = await findExistingOrder();
+        if (concurrentOrder) return concurrentOrder;
+        if (error.code !== '23P01') throw error;
+    }
+
+    if (!bookingId) {
+        const concurrentOrder = await findExistingOrder();
+        if (concurrentOrder) return concurrentOrder;
+        return NextResponse.json({ slotUnavailable: true, error: 'Semua ruangan untuk jam ini sudah terisi. Pilih jam lain.' }, { status: 409 });
     }
 
     // 4. Minta link pembayaran ke Midtrans
@@ -162,12 +171,13 @@ export async function POST(req: Request): Promise<NextResponse> {
             callbacks: { finish: `${siteUrl}/paket-saya` },
         });
 
-        await supabaseAdmin.from('bookings').update({ payment_url: snap.redirect_url }).eq('id', booking.id);
+        const { error } = await supabaseAdmin.from('bookings')
+            .update({ payment_url: snap.redirect_url }).eq('id', bookingId);
+        if (error) throw error;
         return NextResponse.json({ orderId, redirectUrl: snap.redirect_url });
-    } catch (err) {
-        // Midtrans gagal -> lepas slot agar tidak terkunci
-        await supabaseAdmin.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
-        const msg = err instanceof Error ? err.message : 'Tidak dapat menghubungi Midtrans.';
-        return fail(502, `Gagal membuat pembayaran: ${msg}`);
+    } catch (error) {
+        // Jika hasil permintaan Midtrans belum pasti, tahan ruangan sampai sinkronisasi.
+        console.error('Tautan pembayaran belum tersimpan:', error);
+        return NextResponse.json({ orderId, error: 'Tautan pembayaran belum tersedia. Coba lagi dengan pesanan yang sama.' }, { status: 502 });
     }
 }

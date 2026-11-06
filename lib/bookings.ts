@@ -1,7 +1,5 @@
 import { supabase } from './supabaseClient';
-import type { BookingFormData, TimeSlot } from './bookingTypes';
 import type { CatalogPackage, CapacityIcon } from './catalogTypes';
-import { BookedRange } from './scheduleUtils';
 
 export async function getPackageBySlug(slug: string): Promise<CatalogPackage | null> {
     const { data, error } = await supabase
@@ -35,16 +33,17 @@ export async function getPackageBySlug(slug: string): Promise<CatalogPackage | n
     };
 }
 
-export async function getBookedRanges(date: string): Promise<BookedRange[]> {
-    try {
-        const res = await fetch(`/api/booked-slots?date=${encodeURIComponent(date)}`, { cache: 'no-store' });
-        if (!res.ok) return [];
-        const data = (await res.json()) as { ranges?: BookedRange[] };
-        return data.ranges ?? [];
-    } catch (err) {
-        console.error('Gagal mengecek ketersediaan slot:', err);
-        return [];
-    }
+export async function getAvailableStartTimes(
+    date: string,
+    packageSlug: string,
+    signal: AbortSignal,
+): Promise<string[]> {
+    const params = new URLSearchParams({ date, packageSlug });
+    const res = await fetch(`/api/booked-slots?${params}`, { cache: 'no-store', signal });
+    if (!res.ok) throw new Error('Gagal memuat ketersediaan jadwal.');
+    const data = (await res.json()) as { availableStartTimes?: string[] };
+    if (!Array.isArray(data.availableStartTimes)) throw new Error('Format jadwal tidak valid.');
+    return data.availableStartTimes;
 }
 
 // export async function createBooking(

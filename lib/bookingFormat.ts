@@ -1,7 +1,7 @@
 // Helper format tampilan untuk halaman booking (file baru, tidak mengubah file lama).
 import type { PaymentMethod, PaymentScheme } from './bookingTypes';
 
-export const STUDIO_NAME = 'Studio Room A (Daylight Cyclorama)';
+export const STUDIO_NAME = 'Ipho Studio · Ruangan ditetapkan saat checkout';
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];

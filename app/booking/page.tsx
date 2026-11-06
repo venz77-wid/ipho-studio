@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';
 import Navbar from '@/components/Navbar/Navbar';
 import Footer from '@/components/Footer/Footer';
 import BookingStepper from '@/components/BookingStepper/BookingStepper';
@@ -11,9 +11,8 @@ import OrderSummary from '@/components/OrderSummary/OrderSummary';
 import ConfirmationModal from '@/components/ConfirmationModal/ConfirmationModal';
 
 
-// TAMBAHAN 1: Import getBookedSlots
-import { getPackageBySlug, getBookedRanges } from '@/lib/bookings';
-import { getDefaultDate, type BookedRange } from '@/lib/scheduleUtils';
+import { getPackageBySlug, getAvailableStartTimes } from '@/lib/bookings';
+import { getDefaultDate } from '@/lib/scheduleUtils';
 import type { CatalogPackage } from '@/lib/catalogTypes';
 import type { BookingFormData, TimeSlot, PaymentScheme, PaymentMethod } from '@/lib/bookingTypes';
 import { saveOrderId } from '@/lib/myBookingsStorage';
@@ -38,8 +37,16 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
     const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>('full');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('qris');
 
-    // TAMBAHAN 2: State untuk menyimpan jam yang sudah dipesan
-    const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
+    const [scheduleAttempt, setScheduleAttempt] = useState(0);
+    const [schedule, setSchedule] = useState<{
+        key: string;
+        starts: string[];
+        failed: boolean;
+    } | null>(null);
+    const scheduleKey = JSON.stringify([packageSlug, selectedDate, scheduleAttempt]);
+    const currentSchedule = schedule?.key === scheduleKey ? schedule : null;
+    const submitting = useRef(false);
+    const checkout = useRef<{ key: string; id: string } | null>(null);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -71,16 +78,17 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
         fetchPackage();
     }, [packageSlug]);
 
-    // Ambil jam yang sudah terisi setiap kali tanggal berubah
     useEffect(() => {
-        let cancelled = false;
-        getBookedRanges(selectedDate).then((ranges) => {
-            if (!cancelled) setBookedRanges(ranges);
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedDate]);
+        const controller = new AbortController();
+        getAvailableStartTimes(selectedDate, packageSlug, controller.signal)
+            .then((starts) => {
+                if (!controller.signal.aborted) setSchedule({ key: scheduleKey, starts, failed: false });
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) setSchedule({ key: scheduleKey, starts: [], failed: true });
+            });
+        return () => controller.abort();
+    }, [selectedDate, packageSlug, scheduleKey]);
 
     // Ganti tanggal: jam yang dipilih direset karena ketersediaan tiap hari berbeda
     const handleSelectDate = (date: string) => {
@@ -105,7 +113,7 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
 
     // Klik "Konfirmasi & Lanjut Bayar": cek isian, lalu buka popup konfirmasi
     const handleOpenConfirm = () => {
-        if (!packageData || !selectedSlot) {
+        if (!packageData || !selectedSlot || !currentSchedule?.starts.includes(selectedSlot.startTime)) {
             alert('Silakan pilih jadwal terlebih dahulu.');
             return;
         }
@@ -119,33 +127,56 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
     };
 
     const handleSubmit = async () => {
-        if (!packageData || !selectedSlot) return;
+        if (!packageData || !selectedSlot || submitting.current ||
+            !currentSchedule?.starts.includes(selectedSlot.startTime)) return;
 
+        submitting.current = true;
         setIsSubmitting(true);
         try {
+            const payload = {
+                packageSlug: packageData.slug,
+                bookingDate: selectedDate,
+                startTime: selectedSlot.startTime,
+                fullName: formData.fullName.trim(),
+                whatsapp: formData.whatsapp.trim(),
+                email: formData.email.trim(),
+                specialNotes: formData.specialNotes.trim(),
+                paymentScheme,
+                paymentMethod,
+            };
+            // Pertahankan nomor percobaan ketika permintaan harus dikirim ulang.
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+            const key = 'ipho-checkout:' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+            const requestId = checkout.current?.key === key
+                ? checkout.current.id : sessionStorage.getItem(key) ?? crypto.randomUUID();
+            checkout.current = { key, id: requestId };
+            sessionStorage.setItem(key, requestId);
+
             const res = await fetch('/api/payments/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    packageSlug: packageData.slug,
-                    bookingDate: selectedDate,
-                    startTime: selectedSlot.startTime,
-                    endTime: selectedSlot.endTime,
-                    fullName: formData.fullName,
-                    whatsapp: formData.whatsapp,
-                    email: formData.email,
-                    specialNotes: formData.specialNotes,
-                    paymentScheme,
-                    paymentMethod,
-                }),
+                body: JSON.stringify({ ...payload, requestId }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Gagal membuat pembayaran.');
+            if (data.orderId) saveOrderId(data.orderId);
+            if (!res.ok) {
+                if (data.retryWithNewRequest) {
+                    sessionStorage.removeItem(key);
+                    checkout.current = null;
+                }
+                if (data.slotUnavailable) {
+                    setIsConfirmOpen(false);
+                    setSelectedSlot(null);
+                    setScheduleAttempt((n) => n + 1);
+                }
+                throw new Error(data.error || 'Gagal membuat pembayaran.');
+            }
 
-            saveOrderId(data.orderId);
-            window.location.href = data.redirectUrl; // pindah ke halaman Midtrans
+            window.location.href = data.redirectUrl || '/paket-saya';
         } catch (err: unknown) {
             alert((err as Error).message || 'Terjadi kesalahan saat memproses pesanan.');
+        } finally {
+            submitting.current = false;
             setIsSubmitting(false);
         }
     };
@@ -189,8 +220,10 @@ export default function BookingPage({ searchParams }: BookingPageProps) {
                                 selectedSlot={selectedSlot}
                                 onSelectSlot={handleSlotSelect}
                                 durationMinutes={packageData.durationMinutes}
-                                // TAMBAHAN 4: Lempar data slot penuh ke komponen
-                                bookedRanges={bookedRanges}
+                                availableStartTimes={currentSchedule?.starts ?? []}
+                                availabilityLoading={!currentSchedule}
+                                availabilityError={currentSchedule?.failed ?? false}
+                                onRetryAvailability={() => setScheduleAttempt((n) => n + 1)}
                             />
 
                             <ContactForm
