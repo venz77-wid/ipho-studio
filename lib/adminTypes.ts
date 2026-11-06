@@ -54,7 +54,7 @@ export interface AdminOrderDetail {
     status: BookingStatus;
     paymentScheme: Scheme;
     paymentMethod: 'qris' | 'bca_va' | 'mandiri_va';
-    createdAt: string; // ISO
+    createdAt: string | null; // ISO
     paidAt: string | null; // ISO
     bookingDate: string;
     startTime: string;
@@ -63,6 +63,8 @@ export interface AdminOrderDetail {
     whatsapp: string;
     email: string;
     specialNotes: string | null;
+    roomName: string | null;
+    requiresScheduleReview: boolean;
     totalAmount: number;
     paidAmount: number;
     package: {
