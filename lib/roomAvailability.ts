@@ -15,11 +15,13 @@ function wibTime(date: string, time: string): number {
     return Date.parse(date + 'T' + (time.length === 5 ? time + ':00' : time) + '+07:00');
 }
 
-export async function loadRoomAvailability(date: string) {
+export async function loadRoomAvailability(date: string, excludeBookingId?: string) {
+    let activeBookings = supabaseAdmin.from('bookings').select('room_id, start_time, end_time')
+        .eq('booking_date', date).in('status', ['pending', 'confirmed']);
+    if (excludeBookingId) activeBookings = activeBookings.neq('id', excludeBookingId);
     const [rooms, bookings, blocks] = await Promise.all([
         supabaseAdmin.from('rooms').select('id, code').eq('is_active', true).order('code'),
-        supabaseAdmin.from('bookings').select('room_id, start_time, end_time')
-            .eq('booking_date', date).in('status', ['pending', 'confirmed']),
+        activeBookings,
         supabaseAdmin.from('schedule_blocks').select('room_id, starts_at, ends_at')
             .eq('is_active', true).lt('starts_at', addDays(date, 1) + 'T00:00:00+07:00')
             .gt('ends_at', date + 'T00:00:00+07:00'),

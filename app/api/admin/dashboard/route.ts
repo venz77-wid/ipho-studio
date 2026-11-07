@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { syncPendingBatch } from '@/lib/midtrans';
+import { adminPaymentLabel } from '@/lib/adminBookingOperations';
 import { addDays, getNowWIB, toMinutes } from '@/lib/scheduleUtils';
 import {
     ADMIN_PAGE_SIZE,
     ADMIN_TABS,
-    paymentStatusLabel,
     type AdminDashboardResponse,
     type AdminOrderRow,
     type AdminTab,
@@ -14,41 +14,40 @@ import {
     type Scheme,
 } from '@/lib/adminTypes';
 
-interface PackageJoin {
-    title: string;
-    label: string;
-    duration_minutes: number;
-}
 interface Row {
     order_id: string;
     full_name: string;
-    email: string;
+    email: string | null;
     booking_date: string;
     start_time: string;
     end_time: string;
     status: BookingStatus;
     payment_scheme: Scheme;
-    package: PackageJoin | PackageJoin[] | null;
+    package_title: string | null;
+    package_label: string | null;
+    package_duration_minutes: number | null;
+    effective_paid_amount: number;
+    total_amount: number;
+    midtrans_status: string | null;
 }
 
 const COLUMNS =
-    'order_id, full_name, email, booking_date, start_time, end_time, status, payment_scheme, package:packages(title, label, duration_minutes)';
+    'order_id, full_name, email, booking_date, start_time, end_time, status, payment_scheme, package_title, package_label, package_duration_minutes, effective_paid_amount, total_amount, midtrans_status';
 
 const toRow = (r: Row): AdminOrderRow => {
-    const p = Array.isArray(r.package) ? r.package[0] : r.package;
     return {
         orderId: r.order_id,
         customerName: r.full_name,
-        customerEmail: r.email,
-        packageLabel: p?.label ?? '',
-        packageTitle: p?.title ?? 'Paket Foto',
+        customerEmail: r.email ?? '',
+        packageLabel: r.package_label ?? '',
+        packageTitle: r.package_title ?? 'Paket Foto',
         bookingDate: r.booking_date,
         startTime: String(r.start_time).slice(0, 5),
         endTime: String(r.end_time).slice(0, 5),
-        durationMinutes: p?.duration_minutes ?? 0,
+        durationMinutes: r.package_duration_minutes ?? 0,
         status: r.status,
         paymentScheme: r.payment_scheme,
-        paymentLabel: paymentStatusLabel(r.status, r.payment_scheme),
+        paymentLabel: adminPaymentLabel(r.status, Number(r.effective_paid_amount), Number(r.total_amount), r.midtrans_status === 'paid_room_conflict'),
     };
 };
 
@@ -71,10 +70,10 @@ export async function GET(req: Request): Promise<NextResponse> {
     const monthStart = `${now.date.slice(0, 7)}-01`;
     const nextMonthStart = `${addDays(monthStart, 32).slice(0, 7)}-01`;
     const [todayRes, monthRes, pendingRes] = await Promise.all([
-        supabaseAdmin.from('bookings').select('start_time, end_time').eq('booking_date', now.date).eq('status', 'confirmed'),
+        supabaseAdmin.from('admin_booking_summary').select('start_time, completed_at').eq('booking_date', now.date).eq('status', 'confirmed'),
         supabaseAdmin
-            .from('bookings')
-            .select('paid_amount')
+            .from('admin_booking_summary')
+            .select('effective_paid_amount')
             .eq('status', 'confirmed')
             .gte('booking_date', monthStart)
             .lt('booking_date', nextMonthStart),
@@ -82,41 +81,38 @@ export async function GET(req: Request): Promise<NextResponse> {
     ]);
 
     const todayRows = todayRes.data ?? [];
-    const completed = todayRows.filter((r) => toMinutes(String(r.end_time).slice(0, 5)) <= now.minutes).length;
+    if (todayRes.error || monthRes.error || pendingRes.error) {
+        return NextResponse.json({ error: 'Gagal memuat ringkasan dashboard.' }, { status: 500 });
+    }
+    const completed = todayRows.filter((r) => r.completed_at).length;
     const monthRows = monthRes.data ?? [];
     const [y, m] = now.date.split('-').map(Number);
 
     const stats: AdminDashboardResponse['stats'] = {
         totalSessionsToday: todayRows.length,
         completedSessions: completed,
-        upcomingSessions: todayRows.length - completed,
-        revenueMonth: monthRows.reduce((sum, r) => sum + (Number(r.paid_amount) || 0), 0),
-        paidOrdersMonth: monthRows.length,
+        upcomingSessions: todayRows.filter((r) => !r.completed_at && toMinutes(r.start_time) > now.minutes).length,
+        revenueMonth: monthRows.reduce((sum, r) => sum + (Number(r.effective_paid_amount) || 0), 0),
+        paidOrdersMonth: monthRows.filter((r) => Number(r.effective_paid_amount) > 0).length,
         pendingPayments: pendingRes.count ?? 0,
         monthLabel: new Date(y, m - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
     };
 
     // 3) Daftar pesanan (filter tab + pencarian + halaman)
-    let packageIds: string[] = [];
-    if (term) {
-        const { data: pk } = await supabaseAdmin.from('packages').select('id').ilike('title', `%${term}%`);
-        packageIds = (pk ?? []).map((p) => p.id as string);
-    }
-
     async function list(p: number) {
         let q = supabaseAdmin
-            .from('bookings')
+            .from('admin_booking_summary')
             .select(COLUMNS, { count: 'exact' })
             .not('order_id', 'is', null)
             .in('status', ['pending', 'confirmed']);
 
         if (tab === 'Hari Ini') q = q.eq('booking_date', now.date);
         if (tab === 'Menunggu Konfirmasi') q = q.eq('status', 'pending');
-        if (tab === 'Lunas') q = q.eq('status', 'confirmed').eq('payment_scheme', 'full');
+        if (tab === 'Lunas') q = q.eq('is_paid_full', true);
 
         if (term) {
             const parts = [`full_name.ilike.%${term}%`, `email.ilike.%${term}%`, `order_id.ilike.%${term}%`];
-            if (packageIds.length) parts.push(`package_id.in.(${packageIds.join(',')})`);
+            parts.push(`package_title.ilike.%${term}%`);
             q = q.or(parts.join(','));
         }
 

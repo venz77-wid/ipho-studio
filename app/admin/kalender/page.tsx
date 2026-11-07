@@ -69,8 +69,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                     <CalendarDays size={20} />
                 </div>
                 <div className={styles.statCard}>
-                    <div><p className={styles.statLabel}>Menunggu pembayaran</p><p className={styles.statValue}>{stats.pending}</p></div>
-                    <Clock size={20} />
+                    <div><p className={styles.statLabel}>Jadwal diblokir</p><p className={styles.statValue}>{selectedBlocks.length}</p></div>
+                    <Lock size={20} />
                 </div>
                 <div className={styles.statCard}>
                     <div><p className={styles.statLabel}>Durasi sesi dikonfirmasi</p><p className={styles.statValue}>{scheduledHours(stats.minutes)}</p></div>

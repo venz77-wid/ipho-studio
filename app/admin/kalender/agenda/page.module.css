@@ -667,3 +667,33 @@
         display: none !important;
     }
 }
+
+.sessionPhoto {
+    display: block;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: auto;
+    height: auto;
+    max-width: 110px;
+    max-height: 96px;
+    border-radius: 8px;
+}
+
+.clientInfo {
+    min-width: 0;
+}
+
+.paymentBadge {
+    overflow-wrap: anywhere;
+}
+
+.actionButtons {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .sessionPhoto {
+        max-width: 72px;
+        max-height: 72px;
+    }
+}
