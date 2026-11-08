@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import {
     Aperture, Banknote, CalendarClock, ChevronLeft, ChevronRight,
@@ -9,6 +11,8 @@ import CatalogCard from '@/components/CatalogCard/CatalogCard';
 import CatalogToolbar from '@/components/CatalogToolbar/CatalogToolbar';
 import { getCatalogPackages, getCategoryOptions } from '@/lib/packages';
 import { PAGE_SIZE, SORT_OPTIONS, buildCatalogHref, type SortKey } from '@/lib/catalogTypes';
+import { loadStudioContent } from '@/lib/studioContentData';
+import { DEFAULT_STUDIO_CONTENT, studioWhatsApp } from '@/lib/studioContent';
 import styles from './page.module.css';
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -55,11 +59,13 @@ export default async function KatalogPage({
         : 'rekomendasi';
     const page = Math.max(1, parseInt(first(sp.hal), 10) || 1);
 
-    const [result, { categories, totalActive }] = await Promise.all([
+    const [result, { categories, totalActive }, site] = await Promise.all([
         getCatalogPackages({ q, category, sort, page }),
         getCategoryOptions(),
+        loadStudioContent().catch(() => null),
     ]);
 
+    const chat = studioWhatsApp(site?.content.whatsapp ?? DEFAULT_STUDIO_CONTENT.whatsapp);
     const start = result.total === 0 ? 0 : (result.page - 1) * PAGE_SIZE + 1;
     const end = start === 0 ? 0 : start + result.items.length - 1;
     const href = (p: number): string => buildCatalogHref({ q, category, sort, page: p });
@@ -183,7 +189,7 @@ export default async function KatalogPage({
                                 <h3>Butuh konsep kustom atau sewa studio per jam kosong?</h3>
                                 <p>Hubungi tim produksi kami untuk penawaran komersial skala besar.</p>
                             </div>
-                            <a href="https://wa.me/" target="_blank" rel="noreferrer" className={styles.ctaBtn}>
+                            <a href={chat ?? "/tentang"} target="_blank" rel="noreferrer" className={styles.ctaBtn}>
                                 <MessageSquare size={14} aria-hidden /> Konsultasi Bebas Biaya
                             </a>
                         </div>

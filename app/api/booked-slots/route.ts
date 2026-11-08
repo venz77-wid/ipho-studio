@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isBookingDate, loadRoomAvailability } from '@/lib/roomAvailability';
-import { SLOT_START_TIMES, calculateEndTime, isSlotInPast } from '@/lib/scheduleUtils';
+import { studioSlots, calculateEndTime, isSlotInPast } from '@/lib/scheduleUtils';
 import { syncStaleBookingsForDate } from '@/lib/midtrans';
 
 export async function GET(req: Request): Promise<NextResponse> {
@@ -21,7 +21,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
         await syncStaleBookingsForDate(date);
         const availableRooms = await loadRoomAvailability(date);
-        const availableStartTimes = SLOT_START_TIMES
+        const availableStartTimes = studioSlots(date)
             .filter(({ startTime }) => !isSlotInPast(date, startTime) &&
                 availableRooms(startTime, calculateEndTime(startTime, pkg.duration_minutes)).length > 0)
             .map(({ startTime }) => startTime);

@@ -66,7 +66,7 @@ export default function ConfirmationModal({
         { label: 'Paket Studio', value: packageData.title },
         {
             label: 'Jadwal Sesi',
-            value: `${formatBookingDate(selectedDate)} (${selectedSlot.startTime} - ${selectedSlot.endTime} WIB)`,
+            value: `${formatBookingDate(selectedDate)} (${selectedSlot.startTime} - ${selectedSlot.endTime} WITA)`,
         },
         { label: 'Studio', value: STUDIO_NAME },
         { label: 'Nama Pemesan', value: formData.fullName },

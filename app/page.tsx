@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -107,7 +109,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
               })}
             </ul>
 
-            <div className={styles.gallery}>
+            <div id="galeri" className={styles.gallery} style={{ scrollMarginTop: 100 }}>
               {gallery.map((g) => (
                 <div key={g.id} className={styles.galleryItem}>
                   {/* File: public/images/gallery-1.jpg s/d gallery-6.jpg */}

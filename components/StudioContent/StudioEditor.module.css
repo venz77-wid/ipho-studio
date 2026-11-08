@@ -1,0 +1,301 @@
+.editor {
+    color: #172033;
+    max-width: 1030px;
+    margin: 0 auto;
+    overflow-wrap: anywhere;
+}
+
+.editor p {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.editor a {
+    color: #23324a;
+}
+
+.pageHeader,
+.card,
+.actionsBar {
+    background: #fff;
+    border: 1px solid #e4e8f1;
+    border-radius: 10px;
+    padding: clamp(14px, 3vw, 26px);
+}
+
+.pageHeader {
+    margin-bottom: 18px;
+}
+
+.pageHeader h1 {
+    margin: 8px 0;
+    font-size: clamp(24px, 4vw, 35px);
+    line-height: 1.2;
+}
+
+.pageHeader p,
+.card small,
+.actionsBar small {
+    color: #475569;
+}
+
+.breadcrumb {
+    margin-top: 6px !important;
+    font-size: 12px;
+}
+
+.formBody {
+    min-width: 0;
+    display: grid;
+    gap: 16px;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.card {
+    display: grid;
+    gap: 12px;
+    align-items: start;
+}
+
+.card h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+
+.card h2 span {
+    background: #eef1fb;
+    padding: 4px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+}
+
+.field {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.field small {
+    font-weight: 400;
+}
+
+.field input,
+.field textarea,
+.field select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 10px;
+    font: inherit;
+    font-weight: 400;
+    color: inherit;
+    border: 1px solid #dfe5f0;
+    border-radius: 6px;
+    background: #f8f9fd;
+}
+
+.field textarea {
+    resize: vertical;
+}
+
+.grid,
+.gridThree {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gridThree {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.row,
+.itemHeader,
+.iconActions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.row>.field {
+    flex: 1 1 220px;
+}
+
+.itemHeader>strong,
+.faqToggle {
+    flex: 1 1 170px;
+}
+
+.item {
+    padding: 12px;
+    border: 1px solid #e0e5ef;
+    border-radius: 8px;
+    background: #f8f9fd;
+}
+
+.item> :not(:first-child) {
+    margin-top: 10px;
+}
+
+.item dl {
+    margin: 8px 0 0;
+}
+
+.item dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #e6eaf3;
+    padding: 8px 0;
+}
+
+.item dd {
+    margin: 0;
+    text-align: right;
+}
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.editor button,
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 36px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 6px 11px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    color: inherit;
+    background: #fff;
+    border: 1px solid #dfe5f0;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.editor button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.editor .faqToggle {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.editor .danger,
+.error {
+    color: #a32932;
+}
+
+.success {
+    color: #166534;
+}
+
+.editor .primary {
+    background: #111827;
+    color: white;
+    border-color: #111827;
+}
+
+.photo {
+    margin: 0 auto;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.photo img {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+}
+
+.actionsBar {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+    margin-top: 16px;
+    z-index: 2;
+    box-shadow: 0 -5px 20px #0f172a12;
+}
+
+.dialog {
+    width: min(1100px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    border: 1px solid #dfe5f0;
+    border-radius: 10px;
+    background: #f6f7fc;
+    padding: 0;
+    margin: auto;
+}
+
+.dialog::backdrop {
+    background: #0f172ab3;
+}
+
+.dialogHeader {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e4e8f1;
+}
+
+@media (max-width: 700px) {
+
+    .grid,
+    .gridThree {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin: 0 0 18px;
+}
+
+.tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 6px 10px;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.tabs a[aria-current='page'] {
+    border-bottom-color: #111827;
+    color: #111827;
+    font-weight: 750;
+}

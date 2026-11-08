@@ -7,7 +7,7 @@ import { dateLabel, type StudioRoom } from '@/lib/adminSchedule';
 import { CASHIER_METHODS, normalizeWhatsApp, type AdminPackageOption, type AdminSlot } from '@/lib/adminBookingOperations';
 import type { AdminOrderDetail } from '@/lib/adminTypes';
 import { formatRupiah } from '@/lib/catalogTypes';
-import { getNowWIB, toMinutes } from '@/lib/scheduleUtils';
+import { getStudioNow, toMinutes } from '@/lib/scheduleUtils';
 import styles from './BookingOperationButtons.module.css';
 
 const endpoint = '/api/admin/booking-operations';
@@ -105,7 +105,7 @@ function SlotField({ query, value, onChange }: { query: string; value: string; o
     }, [query, revision]);
 
     return <div className={styles.slotRow}>
-        <label>Jam sesi (WIB)
+        <label>Jam sesi (WITA)
             <select value={value} onChange={(e) => onChange(e.target.value)} required disabled={!state?.slots.length}>
                 <option value="">{!query ? 'Lengkapi pilihan' : !state ? 'Memuat slot…' : 'Pilih jam sesi'}</option>
                 {state?.slots.map((slot) => <option key={slot.start} value={slot.start}>{slot.start}–{slot.end}</option>)}
@@ -164,7 +164,7 @@ function WalkInForm({ date, rooms, packages, initialRoom, onClose, onSaved }: {
             </div>
             <div className={styles.column}>
                 <h3>Detail sesi</h3>
-                <p>{dateLabel(date)} · WIB</p>
+                <p>{dateLabel(date)} · WITA</p>
                 <label>Paket studio<select value={packageId} onChange={(e) => { setPackageId(e.target.value); setStartTime(''); }}>
                     {packages.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                 </select></label>
@@ -182,7 +182,7 @@ function WalkInForm({ date, rooms, packages, initialRoom, onClose, onSaved }: {
 
 export function OrderOperationButtons({ order, onSaved }: { order: AdminOrderDetail; onSaved: () => Promise<void> }) {
     const [action, setAction] = useState<'reschedule' | 'complete' | 'cashier' | null>(null);
-    const now = getNowWIB();
+    const now = getStudioNow();
     const startsLater = order.bookingDate > now.date ||
         (order.bookingDate === now.date && toMinutes(order.startTime) > now.minutes);
     const isConfirmed = order.status === 'confirmed' && !order.requiresScheduleReview;
@@ -224,7 +224,7 @@ export function OrderOperationButtons({ order, onSaved }: { order: AdminOrderDet
 function RescheduleForm({ order, onClose, onSaved }: {
     order: AdminOrderDetail; onClose: () => void; onSaved: () => Promise<void>;
 }) {
-    const today = getNowWIB().date;
+    const today = getStudioNow().date;
     const [date, setDate] = useState(order.bookingDate);
     const [roomId, setRoomId] = useState(order.rooms.find((room) => room.id === order.roomId)?.id ?? order.rooms[0].id);
     const [startTime, setStartTime] = useState('');
@@ -239,7 +239,7 @@ function RescheduleForm({ order, onClose, onSaved }: {
             });
             await onSaved();
         }}>
-        <p>Jadwal saat ini {order.bookingDate} · {order.startTime}–{order.endTime} WIB · {order.roomName ?? 'Ruangan belum tercatat'}</p>
+        <p>Jadwal saat ini {order.bookingDate} · {order.startTime}–{order.endTime} WITA · {order.roomName ?? 'Ruangan belum tercatat'}</p>
         <label>Tanggal baru<input type="date" required min={today} value={date}
             onChange={(e) => { setDate(e.target.value); setStartTime(''); }} /></label>
         <label>Ruangan<select value={roomId} onChange={(e) => { setRoomId(e.target.value); setStartTime(''); }}>

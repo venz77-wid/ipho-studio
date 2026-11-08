@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from './auth/requireAdmin';
 import { supabaseAdmin } from './supabaseAdmin';
 import type { BookingSource } from './adminBookingOperations';
-import { atWib, type ScheduleBlock, type ScheduleBooking, type StudioRoom } from './adminSchedule';
+import { atStudioTime, type ScheduleBlock, type ScheduleBooking, type StudioRoom } from './adminSchedule';
 
 export type AgendaBooking = ScheduleBooking & {
     full_name: string;
@@ -53,7 +53,7 @@ export async function loadAdminSchedule<T extends ScheduleBooking>(from: string,
         }),
         readPages<ScheduleBlock>((start, end) => supabaseAdmin.from('schedule_blocks')
             .select('id, room_id, starts_at, ends_at, is_all_day, reason')
-            .eq('is_active', true).lt('starts_at', atWib(until)).gt('ends_at', atWib(from))
+            .eq('is_active', true).lt('starts_at', atStudioTime(until)).gt('ends_at', atStudioTime(from))
             .order('starts_at').order('id').range(start, end)),
     ]);
     if (rooms.error) throw rooms.error;

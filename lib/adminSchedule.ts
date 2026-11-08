@@ -1,4 +1,4 @@
-import { addDays, toMinutes } from './scheduleUtils';
+import { addDays, atStudioTime, STUDIO_TIME_ZONE, toMinutes } from './scheduleUtils';
 import type { BookingStatus, Scheme } from './adminTypes';
 
 export type RoomCode = 'A' | 'B' | 'C';
@@ -37,7 +37,7 @@ export type BlockInput = {
     reason: string;
 };
 
-export const WIB = 'Asia/Jakarta';
+export { atStudioTime, STUDIO_TIME_ZONE } from './scheduleUtils';
 
 export function isScheduleDate(value: unknown): value is string {
     if (typeof value !== 'string' || !/^[1-9]\d{3}-\d{2}-\d{2}$/.test(value)) return false;
@@ -68,30 +68,26 @@ export function monthShift(month: string, offset: number) {
 }
 
 export function dateLabel(date: string) {
-    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeZone: WIB })
-        .format(new Date(date + 'T00:00:00+07:00'));
-}
-
-export function atWib(date: string, time = '00:00') {
-    return date + 'T' + (time.length === 5 ? time + ':00' : time) + '+07:00';
+    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeZone: STUDIO_TIME_ZONE })
+        .format(new Date(atStudioTime(date)));
 }
 
 export function blockOverlapsDate(block: ScheduleBlock, date: string) {
-    return Date.parse(block.starts_at) < Date.parse(atWib(addDays(date, 1))) &&
-        Date.parse(block.ends_at) > Date.parse(atWib(date));
+    return Date.parse(block.starts_at) < Date.parse(atStudioTime(addDays(date, 1))) &&
+        Date.parse(block.ends_at) > Date.parse(atStudioTime(date));
 }
 
 export function blockTimeLabel(block: ScheduleBlock, date: string) {
     const start = Date.parse(block.starts_at);
     const end = Date.parse(block.ends_at);
-    const dayStart = Date.parse(atWib(date));
-    const dayEnd = Date.parse(atWib(addDays(date, 1)));
+    const dayStart = Date.parse(atStudioTime(date));
+    const dayEnd = Date.parse(atStudioTime(addDays(date, 1)));
     if (start <= dayStart && end >= dayEnd) return 'Seharian';
     const fmt = new Intl.DateTimeFormat('en-GB', {
-        hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: WIB,
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: STUDIO_TIME_ZONE,
     });
     return (start <= dayStart ? '00:00' : fmt.format(start)) + '–' +
-        (end >= dayEnd ? '24:00' : fmt.format(end)) + ' WIB';
+        (end >= dayEnd ? '24:00' : fmt.format(end)) + ' WITA';
 }
 
 export function summarizeSchedule(bookings: ScheduleBooking[]) {

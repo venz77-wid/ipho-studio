@@ -14,10 +14,10 @@ import { loadAdminSchedule, requireScheduleAdmin, type AgendaBooking } from '@/l
 import { paymentStatusLabel } from '@/lib/adminTypes';
 import { formatRupiah } from '@/lib/catalogTypes';
 import { ORDER_ID_RE } from '@/lib/myBookingTypes';
-import { addDays, getNowWIB, toMinutes } from '@/lib/scheduleUtils';
+import { addDays, getStudioNow, toMinutes } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
 
-function sessionStatus(booking: AgendaBooking, now: ReturnType<typeof getNowWIB>) {
+function sessionStatus(booking: AgendaBooking, now: ReturnType<typeof getStudioNow>) {
     if (booking.midtrans_status === 'paid_room_conflict') return { label: 'Perlu ditinjau', className: styles.badgeUpcoming };
     if (booking.status !== 'confirmed') {
         return { label: paymentStatusLabel(booking.status, booking.payment_scheme), className: styles.badgeUpcoming };
@@ -37,7 +37,7 @@ function sessionStatus(booking: AgendaBooking, now: ReturnType<typeof getNowWIB>
 export default async function AgendaPage({ searchParams }: { searchParams: Promise<ScheduleParams> }) {
     await requireScheduleAdmin();
     const params = await searchParams;
-    const now = getNowWIB();
+    const now = getStudioNow();
     const date = isScheduleDate(params.tanggal) ? params.tanggal : now.date;
     const room = roomFilter(params.room);
     const { rooms, bookings, blocks } = await loadAdminSchedule<AgendaBooking>(date, addDays(date, 1), true);
@@ -76,7 +76,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 
             <div className={styles.agendaHeader}>
                 <div>
-                    <p className={styles.subMeta}>Agenda harian · WIB</p>
+                    <p className={styles.subMeta}>Agenda harian · WITA</p>
                     <h2 className={styles.pageTitle}>{dateLabel(date)}</h2>
                 </div>
             </div>
@@ -138,7 +138,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                     return (
                         <article key={booking.id} className={styles.sessionCard}>
                             <div className={styles.sessionCardHeader}>
-                                <span className={styles.sessionTime}>{booking.start_time.slice(0, 5)}–{booking.end_time.slice(0, 5)} WIB</span>
+                                <span className={styles.sessionTime}>{booking.start_time.slice(0, 5)}–{booking.end_time.slice(0, 5)} WITA</span>
                                 <span className={`${styles.statusBadge} ${status.className}`}>{status.label}</span>
                             </div>
                             <div className={styles.sessionCardBody}>

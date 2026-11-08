@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
-    LayoutDashboard,
     CalendarDays,
     Calendar,
     Search,
@@ -18,9 +16,9 @@ import {
     ChevronRight,
     Radio
 } from 'lucide-react';
-import LogoutButton from '@/components/LogoutButton';
+import AdminSidebar from '@/components/AdminSchedule/AdminSidebar';
 import type { AdminDashboardResponse } from '@/lib/adminTypes';
-import { addDays, getNowWIB } from '@/lib/scheduleUtils';
+import { addDays, getStudioNow, STUDIO_TIME_ZONE } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
 
 // Helper Format Rupiah
@@ -95,18 +93,18 @@ export default function AdminDashboard() {
         return () => clearInterval(id);
     }, []);
 
-    const todayWIB = getNowWIB().date;
-    const tomorrowWIB = addDays(todayWIB, 1);
+    const todayStudio = getStudioNow().date;
+    const tomorrowStudio = addDays(todayStudio, 1);
     const dayLabel = (iso: string): string => {
-        if (iso === todayWIB) return 'Hari ini';
-        if (iso === tomorrowWIB) return 'Besok';
+        if (iso === todayStudio) return 'Hari ini';
+        if (iso === tomorrowStudio) return 'Besok';
         const [y, m, d] = iso.split('-').map(Number);
         return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     };
 
     const st = live?.stats;
     const dashboardData = {
-        today: new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        today: new Date().toLocaleDateString('id-ID', { timeZone: STUDIO_TIME_ZONE, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
         adminName: "Admin Officer",
         adminRole: "Operations Lead",
         stats: {
@@ -128,7 +126,7 @@ export default function AdminDashboard() {
             packageType: o.packageLabel,
             packageName: o.packageTitle,
             scheduleDate: dayLabel(o.bookingDate),
-            scheduleTime: `${o.startTime} WIB`,
+            scheduleTime: `${o.startTime} WITA`,
             duration: `${o.durationMinutes} Menit`,
             room: 'Studio Room A',
             roomType: 'Daylight Cyclorama',
@@ -152,42 +150,15 @@ export default function AdminDashboard() {
 
     return (
         <div className={styles.adminLayout}>
-            {/* SIDEBAR */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarTop}>
-                    <div className={styles.brand}>
-                        <div>
-                            <h1 className={styles.brandName}>IPHO STUDIO</h1>
-                            <p className={styles.brandRole}>ADMIN PANEL</p>
-                        </div>
-                        <div className={styles.dotIndicator} />
-                    </div>
-
-                    <div className={styles.navGroup}>
-                        <p className={styles.navLabel}>NAVIGATION</p>
-                        <nav className={styles.navMenu}>
-                            {/* Dashboard aktif */}
-                            <Link href="/admin" className={`${styles.navItem} ${styles.active}`}>
-                                <LayoutDashboard size={18} />
-                                Dashboard
-                            </Link>
-                            {/* Link menuju Rekap Kalender agar bisa diklik & berpindah halaman */}
-                            <Link href="/admin/kalender" className={styles.navItem}>
-                                <CalendarDays size={18} />
-                                Rekap Kalender
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
-
-                <div className={styles.sidebarBottom}>
+            <AdminSidebar
+                section="dashboard"
+                status={
                     <div className={styles.sessionStatus}>
                         <span>STUDIO SESSION</span>
                         <span className={styles.liveBadge}>Live</span>
                     </div>
-                    <LogoutButton className={styles.logoutBtn} />
-                </div>
-            </aside>
+                }
+            />
 
             {/* MAIN CONTENT */}
             <main className={styles.mainContent}>

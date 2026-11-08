@@ -5,7 +5,7 @@ import { isScheduleDate } from '@/lib/adminSchedule';
 import { isCashierMethod, normalizeWhatsApp } from '@/lib/adminBookingOperations';
 import { loadRoomAvailability } from '@/lib/roomAvailability';
 import { ORDER_ID_RE } from '@/lib/myBookingTypes';
-import { SLOT_START_TIMES, calculateEndTime, getNowWIB, toMinutes } from '@/lib/scheduleUtils';
+import { studioSlots, calculateEndTime, getStudioNow, toMinutes } from '@/lib/scheduleUtils';
 
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const clock = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const roomId = query.get('roomId') ?? '';
     const orderId = query.get('orderId');
     const packageId = query.get('packageId') ?? '';
-    const now = getNowWIB();
+    const now = getStudioNow();
     if (!isScheduleDate(date) || date < now.date || !uuid.test(roomId) ||
         (orderId ? !ORDER_ID_RE.test(orderId) : !uuid.test(packageId))) {
         return fail(400, 'Tanggal, ruangan, atau pesanan tidak valid.');
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
         }
         if (duration <= 0) return fail(400, 'Durasi sesi tidak valid.');
         const available = await loadRoomAvailability(date, excludeId);
-        const times = SLOT_START_TIMES.map((slot) => slot.startTime);
+        const times = studioSlots(date).map((slot) => slot.startTime);
         if (!orderId && date === now.date) {
             times.push(String(Math.floor(now.minutes / 60)).padStart(2, '0') + ':' + String(now.minutes % 60).padStart(2, '0'));
         }
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
     if (error) {
         if (error.code === '42501') return fail(403, 'Akses khusus admin.');
         if (error.code === 'P0002') return fail(404, error.message);
-        if (error.code === '22023') return fail(400, error.message);
+        if (error.code === '22023' || error.code === '23514') return fail(400, error.message);
         if (error.code === '23P01') return fail(409, 'Jam ini sudah dipesan atau diblokir. Pilih slot lain.');
         if (error.code === '40001') return fail(409, error.message);
         if (error.code === '23505' || error.code === '40P01') return fail(409, 'Permintaan berbenturan. Muat ulang data dan coba lagi.');

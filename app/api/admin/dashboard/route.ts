@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { syncPendingBatch } from '@/lib/midtrans';
 import { adminPaymentLabel } from '@/lib/adminBookingOperations';
-import { addDays, getNowWIB, toMinutes } from '@/lib/scheduleUtils';
+import { addDays, getStudioNow, toMinutes } from '@/lib/scheduleUtils';
 import {
     ADMIN_PAGE_SIZE,
     ADMIN_TABS,
@@ -61,7 +61,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     const term = (sp.get('q') ?? '').replace(/[,()%*\\]/g, ' ').trim().slice(0, 60);
     let page = Math.max(1, parseInt(sp.get('page') ?? '1', 10) || 1);
 
-    const now = getNowWIB();
+    const now = getStudioNow();
 
     // 1) Rapikan status pesanan: yang sudah dibayar dikonfirmasi, yang lewat batas waktu dibatalkan
     await syncPendingBatch();

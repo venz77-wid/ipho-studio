@@ -1,6 +1,8 @@
 import 'server-only';
 import { supabaseAdmin } from './supabaseAdmin';
-import { addDays } from './scheduleUtils';
+import { addDays, atStudioTime } from './scheduleUtils';
+import { fitsStudioHours } from './studioHours';
+import { loadStudioHours } from './studioHoursData';
 
 type Room = { id: string; code: string };
 type Interval = { start: number; end: number };
@@ -11,20 +13,21 @@ export function isBookingDate(value: string): boolean {
     return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-function wibTime(date: string, time: string): number {
-    return Date.parse(date + 'T' + (time.length === 5 ? time + ':00' : time) + '+07:00');
+function studioTime(date: string, time: string): number {
+    return Date.parse(atStudioTime(date, time));
 }
 
 export async function loadRoomAvailability(date: string, excludeBookingId?: string) {
     let activeBookings = supabaseAdmin.from('bookings').select('room_id, start_time, end_time')
         .eq('booking_date', date).in('status', ['pending', 'confirmed']);
     if (excludeBookingId) activeBookings = activeBookings.neq('id', excludeBookingId);
-    const [rooms, bookings, blocks] = await Promise.all([
+    const [rooms, bookings, blocks, { hours }] = await Promise.all([
         supabaseAdmin.from('rooms').select('id, code').eq('is_active', true).order('code'),
         activeBookings,
         supabaseAdmin.from('schedule_blocks').select('room_id, starts_at, ends_at')
-            .eq('is_active', true).lt('starts_at', addDays(date, 1) + 'T00:00:00+07:00')
-            .gt('ends_at', date + 'T00:00:00+07:00'),
+            .eq('is_active', true).lt('starts_at', atStudioTime(addDays(date, 1)))
+            .gt('ends_at', atStudioTime(date)),
+        loadStudioHours(),
     ]);
 
     if (rooms.error || bookings.error || blocks.error) {
@@ -39,15 +42,16 @@ export async function loadRoomAvailability(date: string, excludeBookingId?: stri
         intervals.set(roomId, existing);
     };
     for (const row of bookings.data ?? []) {
-        add(row.room_id, { start: wibTime(date, row.start_time), end: wibTime(date, row.end_time) });
+        add(row.room_id, { start: studioTime(date, row.start_time), end: studioTime(date, row.end_time) });
     }
     for (const row of blocks.data ?? []) {
         add(row.room_id, { start: Date.parse(row.starts_at), end: Date.parse(row.ends_at) });
     }
 
     return (startTime: string, endTime: string): Room[] => {
-        const start = wibTime(date, startTime);
-        const end = wibTime(date, endTime);
+        if (!fitsStudioHours(hours, date, startTime, endTime)) return [];
+        const start = studioTime(date, startTime);
+        const end = studioTime(date, endTime);
         if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [];
 
         const overlaps = (roomId: string | null) =>

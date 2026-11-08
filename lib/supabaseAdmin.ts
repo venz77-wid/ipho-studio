@@ -1,3 +1,4 @@
+import 'server-only';
 // Klien Supabase KHUSUS SERVER (API route). Memakai secret key yang melewati RLS.
 // JANGAN pernah di-import dari komponen 'use client'.
 import { createClient } from '@supabase/supabase-js';

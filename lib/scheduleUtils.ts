@@ -1,20 +1,36 @@
 // Aturan jadwal studio (satu tempat, dipakai oleh tampilan DAN server).
 import type { TimeSlot } from './bookingTypes';
 
-/** Jam mulai sesi yang tersedia setiap hari (zona waktu WIB). */
+/** Jam mulai sesi yang tersedia setiap hari (zona waktu WITA). */
 export const SLOT_START_TIMES: { id: string; startTime: string; period: TimeSlot['period'] }[] = [
     { id: '1', startTime: '10:00', period: 'Pagi' },
     { id: '2', startTime: '11:30', period: 'Pagi' },
     { id: '3', startTime: '13:30', period: 'Siang' },
+    { id: '7', startTime: '14:00', period: 'Siang' },
     { id: '4', startTime: '15:00', period: 'Siang' },
     { id: '5', startTime: '16:30', period: 'Golden Hour' },
     { id: '6', startTime: '18:30', period: 'Malam' },
+    { id: '8', startTime: '19:00', period: 'Malam' },
 ];
 
 /** Pesanan minimal dibuat sekian menit sebelum sesi dimulai. */
 export const MIN_LEAD_MINUTES = 60;
 
-const TZ = 'Asia/Jakarta';
+export const STUDIO_TIME_ZONE = 'Asia/Makassar';
+export const STUDIO_OFFSET = '+08:00';
+
+export function atStudioTime(date: string, time = '00:00') {
+    return date + 'T' + (time.length === 5 ? time + ':00' : time) + STUDIO_OFFSET;
+}
+
+export function studioDayIndex(date: string) {
+    return (new Date(date + 'T00:00:00Z').getUTCDay() + 6) % 7;
+}
+
+export function studioSlots(date: string) {
+    const day = studioDayIndex(date);
+    return SLOT_START_TIMES.filter(({ id }) => (id !== '7' || day === 4) && (id !== '8' || day === 6));
+}
 
 export interface BookedRange {
     start: string; // HH:MM
@@ -33,10 +49,10 @@ export function calculateEndTime(start: string, durationMinutes: number): string
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-/** Tanggal (YYYY-MM-DD) dan jam (menit sejak 00:00) saat ini di WIB. */
-export function getNowWIB(): { date: string; minutes: number } {
+/** Tanggal (YYYY-MM-DD) dan jam (menit sejak 00:00) saat ini di WITA. */
+export function getStudioNow(): { date: string; minutes: number } {
     const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: TZ,
+        timeZone: STUDIO_TIME_ZONE,
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -59,14 +75,14 @@ export function addDays(dateStr: string, n: number): string {
 
 /** Tanggal awal kalender: hari ini, atau besok jika semua jam hari ini sudah lewat. */
 export function getDefaultDate(): string {
-    const now = getNowWIB();
-    const lastStart = Math.max(...SLOT_START_TIMES.map((s) => toMinutes(s.startTime)));
+    const now = getStudioNow();
+    const lastStart = Math.max(...studioSlots(now.date).map((s) => toMinutes(s.startTime)));
     return now.minutes + MIN_LEAD_MINUTES > lastStart ? addDays(now.date, 1) : now.date;
 }
 
 /** true jika tanggal/jam tersebut sudah lewat (atau terlalu dekat dengan sekarang). */
 export function isSlotInPast(date: string, startTime: string): boolean {
-    const now = getNowWIB();
+    const now = getStudioNow();
     if (date < now.date) return true;
     if (date > now.date) return false;
     return toMinutes(startTime) < now.minutes + MIN_LEAD_MINUTES;

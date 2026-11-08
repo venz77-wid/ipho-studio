@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, User, Phone, Mail, Camera, Clock, Check, Printer } from 'lucide-react';
+import { X, User, Camera, Clock, Check, Printer } from 'lucide-react';
 import styles from './WalkInModal.module.css';
 
 interface WalkInModalProps {
@@ -26,7 +26,7 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
     const [email, setEmail] = useState('ardan.p@gmail.com');
     const [selectedPackage, setSelectedPackage] = useState('Editorial Portrait & Wisuda - Rp 450.000');
     const [selectedRoom, setSelectedRoom] = useState('Studio Room A (Daylight Cyclorama)');
-    const [selectedTime, setSelectedTime] = useState('15:00 - 16:00 WIB (Slot Siap)');
+    const [selectedTime, setSelectedTime] = useState('15:00 - 16:00 WITA (Slot Siap)');
     const [photographer] = useState('Dimas Wicaksono (Standby Room A)');
 
     if (!isOpen) return null;
@@ -72,8 +72,8 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
 
                             <div className={styles.inputGroup}>
                                 <label className={styles.labelTitle}>NAMA LENGKAP KLIEN *</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className={styles.inputField}
@@ -85,8 +85,8 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
                                 <label className={styles.labelTitle}>NOMOR WHATSAPP AKTIF *</label>
                                 <div className={styles.phoneInputBox}>
                                     <span className={styles.countryCode}>+62</span>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={whatsapp}
                                         onChange={(e) => setWhatsapp(e.target.value)}
                                         className={styles.inputFieldPhone}
@@ -98,8 +98,8 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
 
                             <div className={styles.inputGroup}>
                                 <label className={styles.labelTitle}>EMAIL KLIEN / CATATAN SINGKAT (OPSIONAL)</label>
-                                <input 
-                                    type="email" 
+                                <input
+                                    type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className={styles.inputField}
@@ -121,7 +121,7 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
 
                             <div className={styles.inputGroup}>
                                 <label className={styles.labelTitle}>PAKET STUDIO *</label>
-                                <select 
+                                <select
                                     value={selectedPackage}
                                     onChange={(e) => setSelectedPackage(e.target.value)}
                                     className={styles.selectField}
@@ -134,7 +134,7 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
 
                             <div className={styles.inputGroup}>
                                 <label className={styles.labelTitle}>RUANGAN STUDIO *</label>
-                                <select 
+                                <select
                                     value={selectedRoom}
                                     onChange={(e) => setSelectedRoom(e.target.value)}
                                     className={styles.selectField}
@@ -147,8 +147,8 @@ export default function WalkInModal({ isOpen, onClose, onConfirm }: WalkInModalP
                             <div className={styles.inputGroup}>
                                 <label className={styles.labelTitle}>PILIHAN JAM SESI HARI INI *</label>
                                 <div className={styles.timeSelectBox}>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={selectedTime}
                                         onChange={(e) => setSelectedTime(e.target.value)}
                                         className={styles.inputField}

@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Lock, CheckCircle2, Calendar } from 'lucide-react';
 import type { TimeSlot } from '@/lib/bookingTypes';
 import {
-    SLOT_START_TIMES,
+    studioSlots,
     calculateEndTime,
-    getNowWIB,
+    getStudioNow,
     isSlotInPast,
 } from '@/lib/scheduleUtils';
 import styles from './SchedulePicker.module.css';
@@ -40,7 +40,7 @@ export default function SchedulePicker({
     availabilityError,
     onRetryAvailability,
 }: SchedulePickerProps) {
-    const today = getNowWIB().date;
+    const today = getStudioNow().date;
 
     const [viewDate, setViewDate] = useState(() => {
         const d = parseDate(selectedDate || today);
@@ -76,7 +76,7 @@ export default function SchedulePicker({
 
     // Jam selesai dihitung dari durasi paket; status tiap jam ditentukan di bawah
     const slots = useMemo(() => {
-        return SLOT_START_TIMES.map((s) => {
+        return studioSlots(selectedDate).map((s) => {
             const endTime = calculateEndTime(s.startTime, durationMinutes);
             const past = isSlotInPast(selectedDate, s.startTime);
             const booked = !past && !availableStartTimes.includes(s.startTime);
@@ -104,7 +104,7 @@ export default function SchedulePicker({
                     <div className={styles.badgeNumber}>01</div>
                     <div>
                         <h2 className={styles.title}>Pilih Jadwal Sesi Studio</h2>
-                        <p className={styles.subtitle}>Pilih tanggal dan jam sesi. Ruangan ditetapkan saat pesanan dibuat.</p>
+                        <p className={styles.subtitle}>Pilih tanggal dan jam sesi (WITA). Ruangan ditetapkan saat pesanan dibuat.</p>
                     </div>
                 </div>
                 <span className={styles.monthIndicator}>{currentMonthLabel.toUpperCase()}</span>
@@ -178,7 +178,7 @@ export default function SchedulePicker({
                                     </div>
                                     <div className={styles.slotFooter}>
                                         <span className={styles.statusTextBooked}>
-                                            {slot.reason === 'past' ? 'Sudah Lewat' : 'Penuh Terisi'}
+                                            {slot.reason === 'past' ? 'Sudah Lewat' : 'Tidak Tersedia'}
                                         </span>
                                     </div>
                                 </div>
