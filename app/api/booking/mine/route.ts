@@ -51,7 +51,8 @@ export async function POST(req: Request): Promise<NextResponse> {
        total_amount, paid_amount, payment_url, created_at, midtrans_status, room:rooms(name),
        package:packages(title, label, image_path, image_position, duration_minutes)`,
         )
-        .in('order_id', ids);
+        .in('order_id', ids)
+        .eq('booking_source', 'online');
     const { data, error } = await load();
     if (error) return NextResponse.json({ error: 'Gagal memuat pesanan.' }, { status: 500 });
 

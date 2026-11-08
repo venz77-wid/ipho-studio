@@ -2,14 +2,17 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     LayoutDashboard, CalendarDays, Calendar, Users,
     ArrowLeft, Printer, User, CheckCircle2, Aperture, Clock,
-    AlignLeft, Receipt, ExternalLink,
-    Check
+    AlignLeft, Receipt, Zap
 } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
-import { paymentStatusLabel, type AdminOrderDetail } from '@/lib/adminTypes';
+import { CASHIER_METHODS, adminPackageImage, adminPaymentLabel } from '@/lib/adminBookingOperations';
+import { agendaHref, isRoomFilter, isScheduleDate } from '@/lib/adminSchedule';
+import { OrderOperationButtons } from '@/components/AdminBookingOperations/BookingOperationButtons';
+import type { AdminOrderDetail } from '@/lib/adminTypes';
 import { PAYMENT_METHOD_LABEL, formatBookingDate } from '@/lib/bookingFormat';
 import { getNowWIB } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
@@ -32,7 +35,7 @@ interface OrderView {
         images: { title: string; src: string }[];
     };
     finance: {
-        method: string; gatewayId: string; verifyTime: string;
+        method: string; verifyTime: string;
         breakdown: { label: string; value: number; isPromo?: boolean }[];
         total: number; paid: number; remaining: number;
     };
@@ -45,26 +48,18 @@ const shortDate = (iso: string): string =>
 const dateTime = (iso: string): string =>
     `${shortDate(iso)}, ${new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: WIB }).replace('.', ':')} WIB`;
 
-const emptyOrder = (id: string): OrderView => ({
-    id, status: '', isActiveToday: false, createdAt: '', scheduleDate: '', scheduleTime: '',
-    client: { name: '', whatsapp: '', isWaVerified: false, email: '', registeredOnline: false },
-    session: { slot: '', package: '', packageDesc: '', room: '', durationText: '', durationNote: '', specialRequest: '', images: [] },
-    finance: { method: '', gatewayId: '', verifyTime: '', breakdown: [], total: 0, paid: 0, remaining: 0 },
-    allocation: { date: '', start: '', end: '', dayStart: '09:00', dayEnd: '21:00' },
-});
-
 // Mengubah data database menjadi bentuk yang dipakai tampilan halaman ini
 const toOrderView = (o: AdminOrderDetail): OrderView => {
-    const paid = o.status === 'confirmed' || o.requiresScheduleReview ? o.paidAmount : 0;
+    const paid = o.paidAmount;
     const time = `${o.startTime} - ${o.endTime} WIB`;
     return {
         id: `#${o.orderId}`,
-        status: o.requiresScheduleReview ? 'PEMBAYARAN PERLU DITINJAU' : paymentStatusLabel(o.status, o.paymentScheme).toUpperCase(),
-        isActiveToday: o.status === 'confirmed' && o.bookingDate === getNowWIB().date,
+        status: adminPaymentLabel(o.status, paid, o.totalAmount, o.requiresScheduleReview).toUpperCase(),
+        isActiveToday: o.status === 'confirmed' && !o.completedAt && o.bookingDate === getNowWIB().date,
         createdAt: o.createdAt ? shortDate(o.createdAt) : 'Tidak tercatat',
         scheduleDate: formatBookingDate(o.bookingDate),
         scheduleTime: time,
-        client: { name: o.fullName, whatsapp: o.whatsapp, isWaVerified: false, email: o.email, registeredOnline: false },
+        client: { name: o.fullName, whatsapp: o.whatsapp, isWaVerified: false, email: o.email ?? '', registeredOnline: o.bookingSource === 'online' },
         session: {
             slot: `SLOT ${o.startTime}`,
             package: o.package.title,
@@ -73,11 +68,10 @@ const toOrderView = (o: AdminOrderDetail): OrderView => {
             durationText: `${time} (${o.package.durationMinutes} Menit Foto)`,
             durationNote: '',
             specialRequest: o.specialNotes ?? '',
-            images: [{ title: o.package.label || 'PAKET', src: o.package.imageSrc ?? '/images/packages/placeholder.jpg' }],
+            images: [{ title: o.package.label || 'PAKET', src: adminPackageImage(o.package.imageSrc) ?? '' }],
         },
         finance: {
-            method: PAYMENT_METHOD_LABEL[o.paymentMethod],
-            gatewayId: `#${o.orderId}`,
+            method: o.paymentMethod === 'cashier' ? 'Kasir' : PAYMENT_METHOD_LABEL[o.paymentMethod] ?? 'Tidak tercatat',
             verifyTime: o.paidAt ? dateTime(o.paidAt) : 'Belum dibayar',
             breakdown: [{ label: `Sewa Studio & Sesi Foto (${o.package.durationMinutes}m)`, value: o.totalAmount }],
             total: o.totalAmount,
@@ -88,12 +82,22 @@ const toOrderView = (o: AdminOrderDetail): OrderView => {
     };
 };
 
-export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+async function fetchOrder(id: string): Promise<AdminOrderDetail> {
+    const res = await fetch('/api/admin/orders/' + encodeURIComponent(id), { cache: 'no-store' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal memuat pesanan.');
+    return data.order;
+}
+
+export default function OrderDetailPage({ params, searchParams }: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ room?: string | string[]; tanggal?: string | string[] }>;
+}) {
     const { id } = use(params);
-    const orderId = id ? `#${id.toUpperCase()}` : '#IPHO-8821';
+    const { room, tanggal } = use(searchParams);
 
     // Data pesanan diambil dari database lewat /api/admin/orders/[id]
-    const [orderData, setOrderData] = useState<OrderView>(() => emptyOrder(orderId));
+    const [order, setOrder] = useState<AdminOrderDetail | null>(null);
     const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
     const [loadError, setLoadError] = useState('');
 
@@ -101,11 +105,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, { cache: 'no-store' });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Gagal memuat pesanan.');
+                const data = await fetchOrder(id);
                 if (!cancelled) {
-                    setOrderData(toOrderView(data.order as AdminOrderDetail));
+                    setOrder(data);
                     setLoadState('ready');
                 }
             } catch (e) {
@@ -120,7 +122,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         };
     }, [id]);
 
-    if (loadState !== 'ready') {
+    if (loadState !== 'ready' || !order) {
         return (
             <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
                 <p>{loadState === 'loading' ? 'Memuat pesanan...' : loadError}</p>
@@ -128,6 +130,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
         );
     }
+
+    const orderData = toOrderView(order);
+    const back = agendaHref(isScheduleDate(tanggal) ? tanggal : order.bookingDate, isRoomFilter(room) ? room : 'all');
+    async function reload() { setOrder(await fetchOrder(id)); }
 
     return (
         <div className={styles.adminLayout}>
@@ -188,7 +194,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                 <div className={styles.contentBody}>
                     <div className={styles.topActions}>
-                        <Link href="/admin/kalender/agenda" className={styles.backBtn}>
+                        <Link href={back} className={styles.backBtn}>
                             <ArrowLeft size={16} />
                             Kembali ke Agenda Harian
                         </Link>
@@ -207,6 +213,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 </span>
                             </div>
                             <div className={styles.subtitleRow}>
+                                {order.completedAt && <span className={styles.badgeActive}>SESI SELESAI · {dateTime(order.completedAt)}</span>}
                                 {orderData.isActiveToday && <span className={styles.badgeActive}>AKTIF HARI INI</span>}
                                 <p className={styles.dateInfo}>
                                     Dibuat pada {orderData.createdAt} • Jadwal Sesi: <strong>{orderData.scheduleDate} ({orderData.scheduleTime})</strong>
@@ -215,7 +222,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                         <button type="button" className={styles.printBtn} onClick={() => window.print()}>
                             <Printer size={16} />
-                            Cetak Ringkasan
+                            {order.bookingSource === 'walk_in' ? 'Cetak Tiket' : 'Cetak Ringkasan'}
                         </button>
                     </div>
 
@@ -249,9 +256,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     </div>
                                     <div>
                                         <p className={styles.fieldLabel}>EMAIL KLIEN</p>
-                                        <a href={`mailto:${orderData.client.email}`} className={styles.emailLink}>
+                                        {orderData.client.email ? <a href={`mailto:${orderData.client.email}`} className={styles.emailLink}>
                                             {orderData.client.email}
-                                        </a>
+                                        </a> : <p className={styles.fieldValue}>Tidak tercatat</p>}
                                     </div>
                                 </div>
                             </div>
@@ -268,7 +275,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 <div className={styles.imageGrid}>
                                     {orderData.session.images.map((img, idx) => (
                                         <div key={idx} className={styles.imgBox}>
-                                            <div className={styles.imgPlaceholder} />
+                                            {img.src ?
+                                                <Image
+                                                    src={img.src}
+                                                    alt={orderData.session.package}
+                                                    width={760}
+                                                    height={570}
+                                                    sizes="(max-width: 640px) 90vw, 380px"
+                                                    className={styles.packageImage}
+                                                /> :
+                                                <div className={styles.imgPlaceholder} />}
                                             <span className={styles.imgLabel}>{img.title}</span>
                                         </div>
                                     ))}
@@ -317,17 +333,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         <div className={styles.iconBox}><Receipt size={16} /></div>
                                         <h3 className={styles.cardTitle}>Rincian Finansial</h3>
                                     </div>
-                                    <span className={styles.badgeBlack}><Check size={12} /> LUNAS</span>
+                                    <span className={styles.badgeBlack}>{orderData.status}</span>
                                 </div>
 
                                 <div className={styles.financeMeta}>
                                     <div className={styles.fMetaRow}>
                                         <span className={styles.textMuted}>Metode Pembayaran</span>
                                         <span className={styles.textBold}>{orderData.finance.method}</span>
-                                    </div>
-                                    <div className={styles.fMetaRow}>
-                                        <span className={styles.textMuted}>ID Transaksi Gateway</span>
-                                        <span className={styles.textNormal}>{orderData.finance.gatewayId}</span>
                                     </div>
                                     <div className={styles.fMetaRow}>
                                         <span className={styles.textMuted}>Waktu Verifikasi</span>
@@ -359,14 +371,34 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                                 <div className={styles.financeRemaining}>
                                     <span className={styles.textBold}>Sisa Tagihan Kasir</span>
-                                    <span className={styles.textGreenBold}>{formatRupiah(orderData.finance.remaining)} (Lunas)</span>
+                                    <span className={orderData.finance.remaining === 0 ? styles.textGreenBold : styles.textBold}>{formatRupiah(orderData.finance.remaining)}</span>
                                 </div>
 
-                                <button className={styles.linkBtn}>
-                                    <ExternalLink size={12} /> Lihat Log Transaksi Gateway (Midtrans)
-                                </button>
+                                {order.cashierPayments.length > 0 && <ul className={styles.operationLog}>
+                                    {order.cashierPayments.map((entry, index) => <li key={index}>
+                                        {CASHIER_METHODS[entry.method]} · {formatRupiah(Number(entry.amount_rupiah))} · {dateTime(entry.recorded_at)}
+                                    </li>)}
+                                </ul>}
                             </div>
-
+                            <div className={`${styles.contentCard} ${styles.operationsCard}`}>
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.cardTitleBox}>
+                                        <div className={styles.iconBox}><Zap size={16} /></div>
+                                        <h3 className={styles.cardTitle}>Aksi Operasional Studio</h3>
+                                    </div>
+                                </div>
+                                <OrderOperationButtons order={order} onSaved={reload} />
+                            </div>
+                            {order.reschedules.length > 0 && <div className={styles.contentCard}>
+                                <h3 className={styles.cardTitle}>Riwayat Reschedule</h3>
+                                <ul className={styles.operationLog}>
+                                    {order.reschedules.map((item, index) => <li key={index}>
+                                        {formatBookingDate(item.old_booking_date)} {item.old_start_time.slice(0, 5)} →{' '}
+                                        {formatBookingDate(item.new_booking_date)} {item.new_start_time.slice(0, 5)} WIB
+                                        <br />{item.reason}
+                                    </li>)}
+                                </ul>
+                            </div>}
                         </div>
                     </div>
                 </div>

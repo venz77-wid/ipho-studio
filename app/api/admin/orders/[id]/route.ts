@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
+import { adminPaidAmount } from '@/lib/adminBookingOperations';
 import { syncPendingBooking } from '@/lib/midtrans';
 import { ORDER_ID_RE } from '@/lib/myBookingTypes';
 import type { AdminOrderDetail, BookingStatus, Scheme } from '@/lib/adminTypes';
@@ -25,7 +26,12 @@ interface Row {
     end_time: string;
     full_name: string;
     whatsapp: string;
-    email: string;
+    email: string | null;
+    booking_source: AdminOrderDetail['bookingSource'];
+    room_id: string | null;
+    completion: { completed_at: string } | { completed_at: string }[] | null;
+    cashier: AdminOrderDetail['cashierPayments'];
+    reschedules: AdminOrderDetail['reschedules'];
     special_notes: string | null;
     total_amount: number;
     paid_amount: number;
@@ -35,6 +41,9 @@ interface Row {
 
 const COLUMNS = `order_id, status, payment_scheme, payment_method, created_at, paid_at, midtrans_status, booking_date,
   start_time, end_time, full_name, whatsapp, email, special_notes, total_amount, paid_amount,
+  booking_source, room_id, completion:booking_session_completions(completed_at),
+  cashier:booking_cashier_payments(amount_rupiah, method, recorded_at),
+  reschedules:booking_reschedule_history(changed_at, reason, old_booking_date, old_start_time, new_booking_date, new_start_time),
   package:packages(title, label, description, image_path, duration_minutes), room:rooms(name)`;
 
 export async function GET(
@@ -57,7 +66,7 @@ export async function GET(
     if (!data) return NextResponse.json({ error: 'Pesanan tidak ditemukan.' }, { status: 404 });
 
     const initial = data as unknown as Row;
-    if (initial.status === 'pending' && initial.created_at && initial.midtrans_status !== 'paid_room_conflict') {
+    if (initial.booking_source === 'online' && initial.status === 'pending' && initial.created_at && initial.midtrans_status !== 'paid_room_conflict') {
         try {
             await syncPendingBooking(orderId, initial.created_at);
             data = (await load()).data ?? data;
@@ -69,13 +78,24 @@ export async function GET(
     const r = data as unknown as Row;
     const p = Array.isArray(r.package) ? r.package[0] : r.package;
     const room = Array.isArray(r.room) ? r.room[0] : r.room;
+    const completion = Array.isArray(r.completion) ? r.completion[0] : r.completion;
+    const { data: rooms, error: roomError } = await supabaseAdmin.from('rooms')
+        .select('id, code, name, is_active').eq('is_active', true).order('code');
+    if (roomError) return NextResponse.json({ error: 'Gagal memuat ruangan.' }, { status: 500 });
+    const cashier = (r.cashier ?? []).sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
     const order: AdminOrderDetail = {
+        bookingSource: r.booking_source,
+        completedAt: completion?.completed_at ?? null,
+        roomId: r.room_id,
+        rooms: rooms ?? [],
+        cashierPayments: cashier,
+        reschedules: (r.reschedules ?? []).sort((a, b) => b.changed_at.localeCompare(a.changed_at)),
         orderId: r.order_id,
         status: r.status,
         paymentScheme: r.payment_scheme,
         paymentMethod: r.payment_method,
         createdAt: r.created_at,
-        paidAt: r.paid_at,
+        paidAt: r.paid_at ?? cashier[0]?.recorded_at ?? null,
         bookingDate: r.booking_date,
         startTime: String(r.start_time).slice(0, 5),
         endTime: String(r.end_time).slice(0, 5),
@@ -85,8 +105,8 @@ export async function GET(
         specialNotes: r.special_notes,
         roomName: room?.name ?? null,
         requiresScheduleReview: r.midtrans_status === 'paid_room_conflict',
-        totalAmount: r.total_amount,
-        paidAmount: r.paid_amount,
+        totalAmount: Number(r.total_amount),
+        paidAmount: adminPaidAmount(r.booking_source, r.status, r.midtrans_status, r.paid_amount, cashier),
         package: {
             title: p?.title ?? 'Paket Foto',
             label: p?.label ?? '',

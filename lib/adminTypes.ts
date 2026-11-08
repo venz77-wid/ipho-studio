@@ -1,3 +1,6 @@
+import type { BookingSource, CashierMethod } from './adminBookingOperations';
+import type { StudioRoom } from './adminSchedule';
+
 // Tipe & helper bersama untuk data admin (aman dipakai di server dan client).
 export type AdminTab = 'Semua' | 'Hari Ini' | 'Menunggu Konfirmasi' | 'Lunas';
 export const ADMIN_TABS: AdminTab[] = ['Semua', 'Hari Ini', 'Menunggu Konfirmasi', 'Lunas'];
@@ -53,7 +56,13 @@ export interface AdminOrderDetail {
     orderId: string;
     status: BookingStatus;
     paymentScheme: Scheme;
-    paymentMethod: 'qris' | 'bca_va' | 'mandiri_va';
+    paymentMethod: 'qris' | 'bca_va' | 'mandiri_va' | 'cashier';
+    bookingSource: BookingSource;
+    completedAt: string | null;
+    roomId: string | null;
+    rooms: StudioRoom[];
+    cashierPayments: { amount_rupiah: number; method: CashierMethod; recorded_at: string }[];
+    reschedules: { changed_at: string; reason: string; old_booking_date: string; old_start_time: string; new_booking_date: string; new_start_time: string }[];
     createdAt: string | null; // ISO
     paidAt: string | null; // ISO
     bookingDate: string;
@@ -61,7 +70,7 @@ export interface AdminOrderDetail {
     endTime: string;
     fullName: string;
     whatsapp: string;
-    email: string;
+    email: string | null;
     specialNotes: string | null;
     roomName: string | null;
     requiresScheduleReview: boolean;

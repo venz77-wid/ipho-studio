@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { WalkInButton } from '@/components/AdminBookingOperations/BookingOperationButtons';
+import { adminPackageImage, adminPaidAmount, adminPaymentLabel } from '@/lib/adminBookingOperations';
 import { ArrowLeft, CalendarDays, Clock, Lock } from 'lucide-react';
 import AdminScheduleShell from '@/components/AdminSchedule/AdminScheduleShell';
 import { AddBlockButton, PrintAgendaButton, UnblockButton } from '@/components/AdminSchedule/AdminScheduleControls';
@@ -18,9 +22,11 @@ function sessionStatus(booking: AgendaBooking, now: ReturnType<typeof getNowWIB>
     if (booking.status !== 'confirmed') {
         return { label: paymentStatusLabel(booking.status, booking.payment_scheme), className: styles.badgeUpcoming };
     }
+    const completion = Array.isArray(booking.completion) ? booking.completion[0] : booking.completion;
+    if (completion) return { label: 'Selesai', className: styles.badgeDone };
     if (booking.booking_date < now.date ||
         (booking.booking_date === now.date && toMinutes(booking.end_time) <= now.minutes)) {
-        return { label: 'Selesai', className: styles.badgeDone };
+        return { label: 'Waktu sesi lewat', className: styles.badgeDone };
     }
     if (booking.booking_date === now.date && toMinutes(booking.start_time) <= now.minutes) {
         return { label: 'Berlangsung', className: styles.badgeActive };
@@ -35,15 +41,22 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     const date = isScheduleDate(params.tanggal) ? params.tanggal : now.date;
     const room = roomFilter(params.room);
     const { rooms, bookings, blocks } = await loadAdminSchedule<AgendaBooking>(date, addDays(date, 1), true);
+    const activeBookings = bookings.filter((item) =>
+        item.status === 'confirmed' || item.status === 'pending' || item.midtrans_status === 'paid_room_conflict');
+    const canAddWalkIn = date >= now.date;
+    const packages = canAddWalkIn ? await supabaseAdmin.from('packages')
+        .select('id, title, price, duration_minutes').eq('is_active', true).gt('price', 0)
+        .gt('duration_minutes', 0).order('sort_order') : null;
+    if (packages?.error) throw packages.error;
     const roomId = rooms.find((item) => item.code === room)?.id;
-    const selected = bookings.filter((item) => room === 'all' || item.room_id === roomId);
+    const selected = activeBookings.filter((item) => room === 'all' || item.room_id === roomId);
     const selectedBlocks = blocks.filter((item) => room === 'all' || item.room_id === roomId);
     const roomNames = new Map(rooms.map((item) => [item.id, item.name]));
     const stats = summarizeSchedule(selected);
     const filters: { code: RoomFilter; name: string; count: number }[] = [
-        { code: 'all', name: 'Semua Room', count: bookings.length },
+        { code: 'all', name: 'Semua Room', count: activeBookings.length },
         ...rooms.map((item) => ({
-            code: item.code, name: item.name, count: bookings.filter((booking) => booking.room_id === item.id).length,
+            code: item.code, name: item.name, count: activeBookings.filter((booking) => booking.room_id === item.id).length,
         })),
     ];
 
@@ -55,7 +68,9 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                 </Link>
                 <div className={styles.actionButtons}>
                     <PrintAgendaButton className={styles.btnOutline} />
-                    <AddBlockButton date={date} room={room} rooms={rooms} className={styles.btnPrimary} />
+                    <AddBlockButton date={date} room={room} rooms={rooms} className={styles.btnOutline} />
+                    {canAddWalkIn && <WalkInButton date={date} room={room} rooms={rooms}
+                        packages={packages?.data ?? []} className={styles.btnPrimary} />}
                 </div>
             </div>
 
@@ -63,9 +78,6 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                 <div>
                     <p className={styles.subMeta}>Agenda harian · WIB</p>
                     <h2 className={styles.pageTitle}>{dateLabel(date)}</h2>
-                    <p className={styles.pageSub}>
-                        <strong>{stats.confirmed} sesi dikonfirmasi</strong> · {stats.pending} menunggu pembayaran
-                    </p>
                 </div>
             </div>
 
@@ -118,6 +130,10 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                     const status = sessionStatus(booking, now);
                     const pkg = Array.isArray(booking.package) ? booking.package[0] : booking.package;
                     const orderId = booking.order_id;
+                    const imageSrc = adminPackageImage(pkg?.image_path);
+                    const paid = adminPaidAmount(booking.booking_source, booking.status, booking.midtrans_status, booking.paid_amount, booking.cashier);
+                    const payment = adminPaymentLabel(booking.status, paid, Number(booking.total_amount),
+                        booking.midtrans_status === 'paid_room_conflict');
                     const duration = toMinutes(booking.end_time) - toMinutes(booking.start_time);
                     return (
                         <article key={booking.id} className={styles.sessionCard}>
@@ -126,6 +142,16 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                                 <span className={`${styles.statusBadge} ${status.className}`}>{status.label}</span>
                             </div>
                             <div className={styles.sessionCardBody}>
+                                {imageSrc && (
+                                    <Image
+                                        src={imageSrc}
+                                        alt={pkg?.title ?? 'Foto paket'}
+                                        width={220}
+                                        height={192}
+                                        sizes="(max-width: 480px) 72px, 110px"
+                                        className={styles.sessionPhoto}
+                                    />
+                                )}
                                 <div className={styles.clientInfo}>
                                     <div className={styles.clientRow}>
                                         <h3 className={styles.clientName}>{booking.full_name}</h3>
@@ -136,9 +162,10 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                                     <p className={styles.roomLocation}>
                                         {booking.room_id ? roomNames.get(booking.room_id) ?? 'Ruangan' : 'Ruangan belum tercatat'}
                                     </p>
-                                    {booking.status === 'confirmed' && (
-                                        <p className={styles.paymentBadge}>{paymentStatusLabel(booking.status, booking.payment_scheme)}</p>
-                                    )}
+                                    <p className={styles.paymentBadge}>{payment}
+                                        {booking.booking_source === 'walk_in' && ' · Walk-in'}
+                                        {orderId && ' · #' + orderId}
+                                    </p>
                                 </div>
                             </div>
                             {booking.special_notes && (
@@ -147,7 +174,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                             <div className={styles.sessionCardFooter}>
                                 <span className={styles.durationTxt}>{scheduledHours(duration)}</span>
                                 {orderId && ORDER_ID_RE.test(orderId) && (
-                                    <Link className={styles.detailLink} href={`/admin/pesanan/${encodeURIComponent(orderId)}`}>
+                                    <Link className={styles.detailLink} href={`/admin/pesanan/${encodeURIComponent(orderId)}?` + new URLSearchParams({ tanggal: date, room })}>
                                         Lihat detail pesanan →
                                     </Link>
                                 )}

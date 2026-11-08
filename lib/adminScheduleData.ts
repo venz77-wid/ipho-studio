@@ -3,6 +3,7 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import { requireAdmin } from './auth/requireAdmin';
 import { supabaseAdmin } from './supabaseAdmin';
+import type { BookingSource } from './adminBookingOperations';
 import { atWib, type ScheduleBlock, type ScheduleBooking, type StudioRoom } from './adminSchedule';
 
 export type AgendaBooking = ScheduleBooking & {
@@ -10,7 +11,11 @@ export type AgendaBooking = ScheduleBooking & {
     whatsapp: string;
     special_notes: string | null;
     total_amount: number;
-    package: { title: string } | { title: string }[] | null;
+    booking_source: BookingSource;
+    paid_amount: number;
+    completion: { completed_at: string } | { completed_at: string }[] | null;
+    cashier: { amount_rupiah: number }[] | null;
+    package: { title: string; image_path: string | null } | { title: string; image_path: string | null }[] | null;
 };
 
 const bookingColumns = 'id, order_id, booking_date, start_time, end_time, room_id, status, payment_scheme, midtrans_status';
@@ -36,7 +41,7 @@ async function readPages<T>(
 
 export async function loadAdminSchedule<T extends ScheduleBooking>(from: string, until: string, detail: boolean) {
     const columns = detail
-        ? bookingColumns + ', full_name, whatsapp, special_notes, total_amount, package:packages(title)'
+        ? bookingColumns + ', full_name, whatsapp, special_notes, total_amount, paid_amount, booking_source, package:packages(title,image_path), completion:booking_session_completions(completed_at), cashier:booking_cashier_payments(amount_rupiah)'
         : bookingColumns;
     const [rooms, bookings, blocks] = await Promise.all([
         supabaseAdmin.from('rooms').select('id, code, name, is_active').order('code'),
