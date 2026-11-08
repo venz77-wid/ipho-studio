@@ -29,7 +29,7 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
 
             <div className={styles.timerBadge}>
                 <Clock size={14} />
-                <span>Slot terkunci 15 menit setelah waktu dipilih</span>
+                <span>Slot terkunci 10 menit setelah waktu dipilih</span>
             </div>
         </div>
     );
