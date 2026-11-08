@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, Clock, RefreshCw } from 'lucide-react';
@@ -16,6 +16,7 @@ type Tab = 'aktif' | 'selesai';
 
 function badge(b: MyBooking): { text: string; cls: string } {
     const map: Record<BookingPhase, { text: string; cls: string }> = {
+        review: { text: 'Pembayaran Perlu Ditinjau', cls: styles.bWaiting },
         waiting: { text: 'Menunggu Pembayaran', cls: styles.bWaiting },
         active: { text: 'Terkonfirmasi', cls: styles.bActive },
         done: { text: 'Selesai', cls: styles.bDone },
@@ -31,43 +32,48 @@ export default function PaketSayaPage(): React.JSX.Element {
     const [tab, setTab] = useState<Tab>('aktif');
     const [returnedId, setReturnedId] = useState<string | null>(null);
 
-    const load = useCallback(async (): Promise<void> => {
-        setLoading(true);
-        setError(null);
-        const ids = getSavedOrderIds();
-        if (ids.length === 0) {
-            setBookings([]);
-            setLoading(false);
-            return;
-        }
-        try {
-            const res = await fetch('/api/booking/mine', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderIds: ids }),
-            });
-            const data = (await res.json()) as { bookings?: MyBooking[]; error?: string };
-            if (!res.ok) throw new Error(data.error || 'Gagal memuat pesanan.');
-            setBookings(data.bookings ?? []);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Gagal memuat pesanan.');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const [refreshCount, setRefreshCount] = useState(0);
 
     useEffect(() => {
+        const controller = new AbortController();
         // Midtrans mengirim user kembali dengan ?order_id=...
         const id = new URLSearchParams(window.location.search).get('order_id');
-        if (id && ORDER_ID_RE.test(id)) {
-            saveOrderId(id);
-            setReturnedId(id);
-        }
-        void load();
-    }, [load]);
+        const validId = id && ORDER_ID_RE.test(id) ? id : null;
+        if (validId) saveOrderId(validId);
+        const ids = getSavedOrderIds();
+
+        const request = ids.length === 0 ? Promise.resolve(null) : fetch('/api/booking/mine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderIds: ids }),
+            signal: controller.signal,
+        });
+
+        void request.then(async (res) => {
+            const data: { bookings?: MyBooking[]; error?: string } =
+                res ? await res.json() : { bookings: [] };
+            if (res && !res.ok) throw new Error(data.error || 'Gagal memuat pesanan.');
+            if (controller.signal.aborted) return;
+            setBookings(data.bookings ?? []);
+            setReturnedId(validId);
+        }).catch((e: unknown) => {
+            if (controller.signal.aborted) return;
+            setError(e instanceof Error ? e.message : 'Gagal memuat pesanan.');
+        }).finally(() => {
+            if (!controller.signal.aborted) setLoading(false);
+        });
+
+        return () => controller.abort();
+    }, [refreshCount]);
+
+    const refresh = () => {
+        setLoading(true);
+        setError(null);
+        setRefreshCount((n) => n + 1);
+    };
 
     const shown = bookings.filter((b) =>
-        tab === 'aktif' ? b.phase === 'waiting' || b.phase === 'active' : b.phase === 'done' || b.phase === 'failed',
+        tab === 'aktif' ? b.phase === 'waiting' || b.phase === 'active' || b.phase === 'review' : b.phase === 'done' || b.phase === 'failed',
     );
     const returned = returnedId ? bookings.find((b) => b.orderId === returnedId) : undefined;
 
@@ -79,7 +85,7 @@ export default function PaketSayaPage(): React.JSX.Element {
                     <span className={styles.eyebrow}>RIWAYAT PEMESANAN</span>
                     <div className={styles.head}>
                         <h1 className={styles.h1}>Paket Saya</h1>
-                        <button type="button" className={styles.refresh} onClick={() => void load()} disabled={loading}>
+                        <button type="button" className={styles.refresh} onClick={refresh} disabled={loading}>
                             <RefreshCw size={14} aria-hidden /> Perbarui Status
                         </button>
                     </div>
@@ -91,6 +97,7 @@ export default function PaketSayaPage(): React.JSX.Element {
                             {returned.phase === 'waiting' && 'Pembayaran belum selesai. Selesaikan pembayaran sebelum waktunya habis.'}
                             {returned.phase === 'failed' && 'Pembayaran tidak berhasil atau dibatalkan. Anda dapat memesan ulang.'}
                             {returned.phase === 'done' && 'Pesanan ini sudah selesai.'}
+                            {returned.phase === 'review' && 'Pembayaran diterima. Hubungi studio untuk konfirmasi jadwal.'}
                         </div>
                     )}
 
@@ -147,6 +154,10 @@ export default function PaketSayaPage(): React.JSX.Element {
                                         <p className={styles.small}>
                                             No. Pesanan {b.orderId} • {PAYMENT_METHOD_LABEL[b.paymentMethod]}
                                         </p>
+                                        <p className={styles.small}>{b.roomName ?? 'Ruangan belum tercatat'}</p>
+                                        {b.phase === 'review' && (
+                                            <p className={styles.small}>Pembayaran diterima. Hubungi studio untuk konfirmasi jadwal.</p>
+                                        )}
                                         <p className={styles.price}>
                                             {formatRupiah(b.paidAmount)}
                                             {b.paymentScheme === 'dp' && (

@@ -29,10 +29,12 @@ function authHeader(): string {
     return 'Basic ' + Buffer.from(key + ':').toString('base64');
 }
 
-export function buildOrderId(): string {
-    const t = Date.now().toString(36).toUpperCase();
-    const r = crypto.randomBytes(8).toString('hex').toUpperCase();
-    return `IPHO-${t}-${r}`;
+export function buildOrderId(requestId: string): string {
+    const key = process.env.MIDTRANS_SERVER_KEY;
+    if (!key) throw new Error('MIDTRANS_SERVER_KEY belum diisi.');
+    const digest = crypto.createHmac('sha256', key)
+        .update('ipho-checkout:' + requestId.toLowerCase()).digest('hex').toUpperCase();
+    return `IPHO-${digest.slice(0, 12)}-${digest.slice(12, 28)}`;
 }
 
 export interface SnapPayload {
@@ -52,6 +54,7 @@ export async function createSnapTransaction(
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: authHeader() },
         body: JSON.stringify(payload),
         cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
     });
     const data = (await res.json().catch(() => ({}))) as {
         token?: string;
@@ -71,6 +74,7 @@ export async function getTransactionStatus(
     const res = await fetch(`${API_URL}/${encodeURIComponent(orderId)}/status`, {
         headers: { Accept: 'application/json', Authorization: authHeader() },
         cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
     });
     const data = (await res.json().catch(() => null)) as {
         status_code?: string;
@@ -78,7 +82,8 @@ export async function getTransactionStatus(
         fraud_status?: string;
     } | null;
     if (data?.status_code === '401') throw new Error('Server Key Midtrans salah atau tidak aktif');
-    if (!data || data.status_code === '404' || res.status === 404 || !data.transaction_status) return null;
+    if (data?.status_code === '404' || res.status === 404) return null;
+    if (!res.ok || !data?.transaction_status) throw new Error('Status Midtrans tidak dapat dipastikan.');
     return { transaction_status: data.transaction_status, fraud_status: data.fraud_status };
 }
 
@@ -96,8 +101,13 @@ export async function applyTransactionResult(
     fraud?: string,
 ): Promise<BookingStatus> {
     const status = mapTransactionStatus(ts, fraud);
-    const patch: Record<string, string> = { midtrans_status: ts };
-    if (status !== 'pending') patch.status = status;
+    if (status === 'pending') {
+        const { data, error } = await supabaseAdmin.from('bookings')
+            .select('status').eq('order_id', orderId).maybeSingle();
+        if (error) throw error;
+        return (data?.status ?? 'pending') as BookingStatus;
+    }
+    const patch: Record<string, string> = { midtrans_status: ts, status };
     if (status === 'confirmed') patch.paid_at = new Date().toISOString();
 
     let query = supabaseAdmin.from('bookings').update(patch).eq('order_id', orderId);
@@ -105,49 +115,82 @@ export async function applyTransactionResult(
     // (aturan database menolak jika jam itu sudah terisi).
     query = status === 'confirmed' ? query.in('status', ['pending', 'expired']) : query.eq('status', 'pending');
 
-    const { error } = await query;
+    const { data: updated, error } = await query.select('status').maybeSingle();
     if (error) {
-        console.error(`Gagal menyimpan status ${orderId}:`, error.message);
-        if (status === 'confirmed') return 'expired';
+        if (status !== 'confirmed' || !['23P01', '23514'].includes(error.code)) throw error;
+
+        // Pembayaran berhasil, tetapi jadwalnya perlu ditangani manual.
+        const { data: flagged, error: flagError } = await supabaseAdmin.from('bookings')
+            .update({ midtrans_status: 'paid_room_conflict', paid_at: patch.paid_at })
+            .eq('order_id', orderId).in('status', ['pending', 'expired'])
+            .select('status').maybeSingle();
+        if (flagError) throw flagError;
+        if (flagged) {
+            console.error('Pembayaran perlu rekonsiliasi ruangan:', orderId);
+            return flagged.status as BookingStatus;
+        }
     }
-    return status;
+
+    if (updated) return updated.status as BookingStatus;
+    const { data: current, error: readError } = await supabaseAdmin.from('bookings')
+        .select('status').eq('order_id', orderId).maybeSingle();
+    if (readError) throw readError;
+    return (current?.status ?? status) as BookingStatus;
 }
 
-/** Minta Midtrans menutup transaksi yang belum dibayar agar tidak bisa dibayar lagi. */
-export async function expireTransaction(orderId: string): Promise<void> {
-    try {
-        await fetch(`${API_URL}/${encodeURIComponent(orderId)}/expire`, {
-            method: 'POST',
-            headers: { Accept: 'application/json', Authorization: authHeader() },
-            cache: 'no-store',
-        });
-    } catch (e) {
-        console.error('Gagal menutup transaksi di Midtrans:', e);
-    }
+/** Tutup transaksi dan biarkan pengecekan status memastikan hasilnya. */
+async function expireTransaction(orderId: string): Promise<void> {
+    await fetch(`${API_URL}/${encodeURIComponent(orderId)}/expire`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', Authorization: authHeader() },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+    });
 }
 
-/**
- * Cek satu pesanan yang masih pending.
- * - Sudah dibayar -> dikonfirmasi (selalu menang atas batas waktu).
- * - Belum dibayar dan umurnya melewati PENDING_TTL_MINUTES -> dibatalkan (expired).
- */
 export async function syncPendingBooking(orderId: string, createdAt: string): Promise<BookingStatus> {
     const isStale = Date.now() - new Date(createdAt).getTime() >= STALE_MS;
 
-    const tx = await getTransactionStatus(orderId);
-    if (tx) {
-        const status = await applyTransactionResult(orderId, tx.transaction_status, tx.fraud_status);
-        if (status !== 'pending') return status;
+    let tx = await getTransactionStatus(orderId);
+    if (tx && mapTransactionStatus(tx.transaction_status, tx.fraud_status) !== 'pending') {
+        return applyTransactionResult(orderId, tx.transaction_status, tx.fraud_status);
     }
     if (!isStale) return 'pending';
 
-    if (tx) await expireTransaction(orderId);
-    await supabaseAdmin
-        .from('bookings')
+    if (tx) {
+        await expireTransaction(orderId);
+        tx = await getTransactionStatus(orderId);
+        return tx ? applyTransactionResult(orderId, tx.transaction_status, tx.fraud_status) : 'pending';
+    }
+
+    const { data, error } = await supabaseAdmin.from('bookings')
         .update({ status: 'expired', midtrans_status: 'expire' })
-        .eq('order_id', orderId)
-        .eq('status', 'pending');
-    return 'expired';
+        .eq('order_id', orderId).eq('status', 'pending')
+        .select('status').maybeSingle();
+    if (error) throw error;
+    if (data) return 'expired';
+
+    const { data: current, error: readError } = await supabaseAdmin.from('bookings')
+        .select('status').eq('order_id', orderId).maybeSingle();
+    if (readError) throw readError;
+    return (current?.status ?? 'expired') as BookingStatus;
+}
+
+export async function syncStaleBookingsForDate(date: string): Promise<void> {
+    const cutoff = new Date(Date.now() - STALE_MS).toISOString();
+    const { data, error } = await supabaseAdmin.from('bookings')
+        .select('order_id, created_at')
+        .eq('booking_date', date).eq('status', 'pending')
+        .not('order_id', 'is', null).lt('created_at', cutoff)
+        .or('midtrans_status.is.null,midtrans_status.neq.paid_room_conflict')
+        .order('created_at').limit(12);
+    if (error) throw error;
+    const results = await Promise.allSettled((data ?? []).map(
+        (row) => syncPendingBooking(row.order_id, row.created_at),
+    ));
+    for (const result of results) {
+        if (result.status === 'rejected') console.error('Sinkronisasi pesanan tertunda:', result.reason);
+    }
 }
 
 /** Rapikan semua pesanan pending sekaligus (dipakai dashboard admin). */

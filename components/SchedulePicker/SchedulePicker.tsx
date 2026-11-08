@@ -6,8 +6,6 @@ import {
     calculateEndTime,
     getNowWIB,
     isSlotInPast,
-    overlapsAny,
-    type BookedRange,
 } from '@/lib/scheduleUtils';
 import styles from './SchedulePicker.module.css';
 
@@ -17,7 +15,10 @@ interface SchedulePickerProps {
     selectedSlot: TimeSlot | null;
     onSelectSlot: (slot: TimeSlot) => void;
     durationMinutes: number;
-    bookedRanges: BookedRange[];
+    availableStartTimes: string[];
+    availabilityLoading: boolean;
+    availabilityError: boolean;
+    onRetryAvailability: () => void;
 }
 
 const pad = (n: number): string => String(n).padStart(2, '0');
@@ -34,7 +35,10 @@ export default function SchedulePicker({
     selectedSlot,
     onSelectSlot,
     durationMinutes,
-    bookedRanges,
+    availableStartTimes,
+    availabilityLoading,
+    availabilityError,
+    onRetryAvailability,
 }: SchedulePickerProps) {
     const today = getNowWIB().date;
 
@@ -75,8 +79,7 @@ export default function SchedulePicker({
         return SLOT_START_TIMES.map((s) => {
             const endTime = calculateEndTime(s.startTime, durationMinutes);
             const past = isSlotInPast(selectedDate, s.startTime);
-            // Bentrok jika rentang jam sesi ini beririsan dengan pesanan lain (bukan hanya jam mulai yang sama)
-            const booked = !past && overlapsAny(s.startTime, endTime, bookedRanges);
+            const booked = !past && !availableStartTimes.includes(s.startTime);
             const slot: TimeSlot = {
                 id: s.id,
                 startTime: s.startTime,
@@ -87,7 +90,7 @@ export default function SchedulePicker({
             };
             return slot;
         });
-    }, [durationMinutes, selectedDate, bookedRanges]);
+    }, [durationMinutes, selectedDate, availableStartTimes]);
 
     const handlePrevMonth = () => {
         if (canGoPrev) setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
@@ -101,7 +104,7 @@ export default function SchedulePicker({
                     <div className={styles.badgeNumber}>01</div>
                     <div>
                         <h2 className={styles.title}>Pilih Jadwal Sesi Studio</h2>
-                        <p className={styles.subtitle}>Pilih tanggal dan jam ketersediaan Studio Room A (Daylight Cyclorama)</p>
+                        <p className={styles.subtitle}>Pilih tanggal dan jam sesi. Ruangan ditetapkan saat pesanan dibuat.</p>
                     </div>
                 </div>
                 <span className={styles.monthIndicator}>{currentMonthLabel.toUpperCase()}</span>
@@ -155,7 +158,14 @@ export default function SchedulePicker({
                     <span className={styles.slotDuration}>Sesi {durationMinutes} Menit</span>
                 </div>
 
-                <div className={styles.slotsGrid}>
+                {availabilityLoading && <p role="status">Memeriksa ketersediaan jadwal…</p>}
+                {availabilityError && (
+                    <div role="alert">
+                        <p>Jadwal belum bisa dimuat.</p>
+                        <button type="button" onClick={onRetryAvailability}>Coba lagi</button>
+                    </div>
+                )}
+                {!availabilityLoading && !availabilityError && <div className={styles.slotsGrid}>
                     {slots.map((slot) => {
                         const isSelected = selectedSlot?.id === slot.id;
 
@@ -200,7 +210,7 @@ export default function SchedulePicker({
                             </div>
                         );
                     })}
-                </div>
+                </div>}
             </div>
         </div>
     );

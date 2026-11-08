@@ -64,7 +64,7 @@ export default function OrderSummary({
                 <p className={styles.scheduleValue}>
                     {selectedDate} | {selectedSlot ? `${selectedSlot.startTime} - ${selectedSlot.endTime} WIB` : 'Belum Dipilih'}
                 </p>
-                <p className={styles.roomText}>Studio Room A (Daylight Cyclorama)</p>
+                <p className={styles.roomText}>Ruangan ditetapkan saat pesanan dibuat</p>
             </div>
 
             {/* Rincian Biaya */}

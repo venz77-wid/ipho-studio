@@ -22,6 +22,8 @@ interface Row {
     total_amount: number;
     paid_amount: number;
     payment_url: string | null;
+    midtrans_status: string | null;
+    room: { name: string } | { name: string }[] | null;
     created_at: string;
     package: PackageJoin | PackageJoin[] | null;
 }
@@ -42,38 +44,49 @@ export async function POST(req: Request): Promise<NextResponse> {
         : [];
     if (ids.length === 0) return NextResponse.json({ bookings: [] });
 
-    const { data, error } = await supabaseAdmin
+    const load = () => supabaseAdmin
         .from('bookings')
         .select(
             `order_id, status, booking_date, start_time, end_time, payment_scheme, payment_method,
-       total_amount, paid_amount, payment_url, created_at,
+       total_amount, paid_amount, payment_url, created_at, midtrans_status, room:rooms(name),
        package:packages(title, label, image_path, image_position, duration_minutes)`,
         )
         .in('order_id', ids);
+    const { data, error } = await load();
     if (error) return NextResponse.json({ error: 'Gagal memuat pesanan.' }, { status: 500 });
 
-    const rows = (data ?? []) as unknown as Row[];
+    let rows = (data ?? []) as unknown as Row[];
 
     // Pesanan yang masih menunggu: tanyakan statusnya ke Midtrans (tidak perlu webhook)
+    const pending = rows.filter((r) => r.status === 'pending' && r.midtrans_status !== 'paid_room_conflict');
     await Promise.all(
-        rows
-            .filter((r) => r.status === 'pending')
+        pending
             .map(async (r) => {
                 try {
-                    r.status = await syncPendingBooking(r.order_id, r.created_at);
+                    await syncPendingBooking(r.order_id, r.created_at);
                 } catch (e) {
                     console.error('Sinkron status gagal:', e);
                 }
             }),
     );
 
+    if (pending.length) {
+        const fresh = await load();
+        if (fresh.error) return NextResponse.json({ error: 'Gagal memuat status terbaru.' }, { status: 500 });
+        rows = (fresh.data ?? []) as unknown as Row[];
+    }
+
     const bookings: MyBooking[] = rows
         .map((r) => {
             const p = Array.isArray(r.package) ? r.package[0] : r.package;
+            const room = Array.isArray(r.room) ? r.room[0] : r.room;
+            const phase = r.midtrans_status === 'paid_room_conflict'
+                ? 'review' : toPhase(r.status, r.booking_date, r.end_time);
             return {
                 orderId: r.order_id,
                 status: r.status,
-                phase: toPhase(r.status, r.booking_date, r.end_time),
+                phase,
+                roomName: room?.name ?? null,
                 packageTitle: p?.title ?? 'Paket Foto',
                 packageLabel: p?.label ?? '',
                 imageSrc: p?.image_path ?? null,
@@ -86,7 +99,7 @@ export async function POST(req: Request): Promise<NextResponse> {
                 paymentMethod: r.payment_method,
                 totalAmount: r.total_amount,
                 paidAmount: r.paid_amount,
-                paymentUrl: r.status === 'pending' ? r.payment_url : null,
+                paymentUrl: phase === 'waiting' ? r.payment_url : null,
                 createdAt: r.created_at,
             };
         })

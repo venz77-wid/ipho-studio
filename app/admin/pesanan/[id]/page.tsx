@@ -5,10 +5,9 @@ import Link from 'next/link';
 import {
     LayoutDashboard, CalendarDays, Calendar, Users,
     ArrowLeft, Printer, User, CheckCircle2, Aperture, Clock,
-    AlignLeft, Receipt, ExternalLink, Zap, MessageCircle,
-    Check, FileText, ChevronRight
+    AlignLeft, Receipt, ExternalLink,
+    Check
 } from 'lucide-react';
-import RescheduleModal from '@/components/RescheduleModal/RescheduleModal';
 import LogoutButton from '@/components/LogoutButton';
 import { paymentStatusLabel, type AdminOrderDetail } from '@/lib/adminTypes';
 import { PAYMENT_METHOD_LABEL, formatBookingDate } from '@/lib/bookingFormat';
@@ -28,7 +27,7 @@ interface OrderView {
     scheduleTime: string;
     client: { name: string; whatsapp: string; isWaVerified: boolean; email: string; registeredOnline: boolean };
     session: {
-        slot: string; package: string; packageDesc: string; room: string; roomDesc: string;
+        slot: string; package: string; packageDesc: string; room: string;
         durationText: string; durationNote: string; specialRequest: string;
         images: { title: string; src: string }[];
     };
@@ -49,20 +48,20 @@ const dateTime = (iso: string): string =>
 const emptyOrder = (id: string): OrderView => ({
     id, status: '', isActiveToday: false, createdAt: '', scheduleDate: '', scheduleTime: '',
     client: { name: '', whatsapp: '', isWaVerified: false, email: '', registeredOnline: false },
-    session: { slot: '', package: '', packageDesc: '', room: '', roomDesc: '', durationText: '', durationNote: '', specialRequest: '', images: [] },
+    session: { slot: '', package: '', packageDesc: '', room: '', durationText: '', durationNote: '', specialRequest: '', images: [] },
     finance: { method: '', gatewayId: '', verifyTime: '', breakdown: [], total: 0, paid: 0, remaining: 0 },
     allocation: { date: '', start: '', end: '', dayStart: '09:00', dayEnd: '21:00' },
 });
 
 // Mengubah data database menjadi bentuk yang dipakai tampilan halaman ini
 const toOrderView = (o: AdminOrderDetail): OrderView => {
-    const paid = o.status === 'confirmed' ? o.paidAmount : 0;
+    const paid = o.status === 'confirmed' || o.requiresScheduleReview ? o.paidAmount : 0;
     const time = `${o.startTime} - ${o.endTime} WIB`;
     return {
         id: `#${o.orderId}`,
-        status: paymentStatusLabel(o.status, o.paymentScheme).toUpperCase(),
+        status: o.requiresScheduleReview ? 'PEMBAYARAN PERLU DITINJAU' : paymentStatusLabel(o.status, o.paymentScheme).toUpperCase(),
         isActiveToday: o.status === 'confirmed' && o.bookingDate === getNowWIB().date,
-        createdAt: shortDate(o.createdAt),
+        createdAt: o.createdAt ? shortDate(o.createdAt) : 'Tidak tercatat',
         scheduleDate: formatBookingDate(o.bookingDate),
         scheduleTime: time,
         client: { name: o.fullName, whatsapp: o.whatsapp, isWaVerified: false, email: o.email, registeredOnline: false },
@@ -70,8 +69,7 @@ const toOrderView = (o: AdminOrderDetail): OrderView => {
             slot: `SLOT ${o.startTime}`,
             package: o.package.title,
             packageDesc: o.package.description,
-            room: 'Studio Room A',
-            roomDesc: 'Daylight Cyclorama',
+            room: o.roomName ?? 'Ruangan belum tercatat',
             durationText: `${time} (${o.package.durationMinutes} Menit Foto)`,
             durationNote: '',
             specialRequest: o.specialNotes ?? '',
@@ -93,9 +91,6 @@ const toOrderView = (o: AdminOrderDetail): OrderView => {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const orderId = id ? `#${id.toUpperCase()}` : '#IPHO-8821';
-
-    // State untuk kontrol Modal Reschedule
-    const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
 
     // Data pesanan diambil dari database lewat /api/admin/orders/[id]
     const [orderData, setOrderData] = useState<OrderView>(() => emptyOrder(orderId));
@@ -124,16 +119,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             cancelled = true;
         };
     }, [id]);
-
-    // Handler ketika reschedule dikonfirmasi dari dalam modal
-    const handleConfirmReschedule = (newDate: string, newSlot: string) => {
-        setOrderData(prev => ({
-            ...prev,
-            scheduleDate: newDate,
-            scheduleTime: newSlot
-        }));
-        alert(`Jadwal pesanan ${orderData.id} berhasil diperbarui ke ${newDate} (${newSlot})!`);
-    };
 
     if (loadState !== 'ready') {
         return (
@@ -228,7 +213,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 </p>
                             </div>
                         </div>
-                        <button className={styles.printBtn}>
+                        <button type="button" className={styles.printBtn} onClick={() => window.print()}>
                             <Printer size={16} />
                             Cetak Ringkasan
                         </button>
@@ -298,7 +283,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     <div className={styles.infoBox}>
                                         <p className={styles.fieldLabel}>RUANGAN STUDIO</p>
                                         <p className={styles.fieldValueLg}>{orderData.session.room}</p>
-                                        <p className={styles.fieldSub}>{orderData.session.roomDesc}</p>
                                     </div>
                                 </div>
 
@@ -319,7 +303,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <AlignLeft size={14} />
                                             <span>Permintaan Khusus & Catatan Klien</span>
                                         </div>
-                                        <p className={styles.alertText}>"{orderData.session.specialRequest}"</p>
+                                        <p className={styles.alertText}>“{orderData.session.specialRequest}”</p>
                                     </div>
                                 )}
                             </div>
@@ -383,48 +367,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 </button>
                             </div>
 
-                            <div className={styles.contentCard}>
-                                <div className={styles.cardHeader}>
-                                    <div className={styles.cardTitleBox}>
-                                        <div className={styles.iconBox}><Zap size={16} /></div>
-                                        <h3 className={styles.cardTitle}>Aksi Operasional Studio</h3>
-                                    </div>
-                                </div>
-                                <div className={styles.actionGrid}>
-                                    <button className={styles.btnPrimary}>
-                                        <MessageCircle size={16} /> Hubungi WhatsApp Klien
-                                    </button>
-                                    {/* Tombol pemicu Modal Reschedule */}
-                                    <button onClick={() => setIsRescheduleOpen(true)} className={styles.btnOutline}>
-                                        <Calendar size={16} /> Jadwalkan Ulang (Reschedule)
-                                    </button>
-                                    <button className={styles.btnSoft}>
-                                        <CheckCircle2 size={16} /> Tandai Sesi Selesai
-                                    </button>
-                                    <button className={styles.btnGhost}>
-                                        <FileText size={16} /> Cetak Surat Jalan / Work Order Fotografer
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* Modal Reschedule Dinamis */}
-            <RescheduleModal
-                isOpen={isRescheduleOpen}
-                onClose={() => setIsRescheduleOpen(false)}
-                orderInfo={{
-                    id: orderData.id,
-                    customerName: orderData.client.name,
-                    customerPhone: orderData.client.whatsapp,
-                    packageName: orderData.session.package,
-                    roomName: orderData.session.room,
-                    currentSchedule: `${orderData.scheduleDate} • ${orderData.scheduleTime}`
-                }}
-                onConfirm={handleConfirmReschedule}
-            />
         </div>
     );
 }
