@@ -83,3 +83,30 @@
         display: none;
     }
 }
+
+.logoutButton {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #3f3f46;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.logoutButton:hover {
+    background: transparent;
+    color: #0a0a0a;
+}
+
+.logoutButton:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

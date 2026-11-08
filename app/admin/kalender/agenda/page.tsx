@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-    LayoutDashboard, CalendarDays, LogOut, Calendar, Users, 
-    ArrowLeft, Printer, Plus, Search, Clock, CheckCircle2, 
+import {
+    LayoutDashboard, CalendarDays, Calendar, Users,
+    ArrowLeft, Printer, Plus, Search, Clock, CheckCircle2,
     AlertCircle, Camera, ChevronRight, ExternalLink
 } from 'lucide-react';
 import WalkInModal from '@/components/WalkInModal/WalkInModal';
+import LogoutButton from '@/components/LogoutButton';
 import styles from './page.module.css';
 
 // Helper Format Rupiah
@@ -95,7 +96,7 @@ const AGENDA_DATA = {
 
 export default function DailyAgendaPage() {
     const [selectedTab, setSelectedTab] = useState('Semua Sesi');
-    
+
     // State untuk mengontrol Modal Walk-in
     const [isWalkInOpen, setIsWalkInOpen] = useState(false);
 
@@ -146,10 +147,7 @@ export default function DailyAgendaPage() {
                 </div>
 
                 <div className={styles.sidebarBottom}>
-                    <button className={styles.logoutBtn}>
-                        <LogOut size={18} />
-                        Logout
-                    </button>
+                    <LogoutButton className={styles.logoutBtn} />
                 </div>
             </aside>
 
@@ -185,10 +183,10 @@ export default function DailyAgendaPage() {
                             <ArrowLeft size={16} /> Kembali ke Kalender Bulanan
                         </Link>
                         <div className={styles.actionButtons}>
-                            <button className={styles.btnOutline}><Printer size={16}/> Cetak Jadwal Harian</button>
+                            <button className={styles.btnOutline}><Printer size={16} /> Cetak Jadwal Harian</button>
                             {/* Tombol pemicu Modal Walk-In */}
                             <button onClick={() => setIsWalkInOpen(true)} className={styles.btnPrimary}>
-                                <Plus size={16}/> + Tambah Sesi Walk-in
+                                <Plus size={16} /> + Tambah Sesi Walk-in
                             </button>
                         </div>
                     </div>
@@ -211,8 +209,8 @@ export default function DailyAgendaPage() {
                                 const cleanTabName = tab.split(' (')[0];
                                 const isSelected = selectedTab === cleanTabName;
                                 return (
-                                    <button 
-                                        key={tab} 
+                                    <button
+                                        key={tab}
                                         onClick={() => setSelectedTab(cleanTabName)}
                                         className={`${styles.tabBtn} ${isSelected ? styles.tabActive : ''}`}
                                     >
@@ -222,9 +220,9 @@ export default function DailyAgendaPage() {
                             })}
                         </div>
                         <div className={styles.statusLegends}>
-                            <span><div className={`${styles.legendDot} ${styles.dotActive}`}/> Berlangsung</span>
-                            <span><div className={`${styles.legendDot} ${styles.dotDone}`}/> Selesai</span>
-                            <span><div className={`${styles.legendDot} ${styles.dotUpcoming}`}/> Mendatang</span>
+                            <span><div className={`${styles.legendDot} ${styles.dotActive}`} /> Berlangsung</span>
+                            <span><div className={`${styles.legendDot} ${styles.dotDone}`} /> Selesai</span>
+                            <span><div className={`${styles.legendDot} ${styles.dotUpcoming}`} /> Mendatang</span>
                         </div>
                     </div>
 
@@ -275,7 +273,7 @@ export default function DailyAgendaPage() {
                     {/* OCCUPANCY FOOTER BAR */}
                     <div className={styles.occupancyFooter}>
                         <div className={styles.occLeft}>
-                            <div className={styles.iconBox}><CalendarDays size={16}/></div>
+                            <div className={styles.iconBox}><CalendarDays size={16} /></div>
                             <div>
                                 <h4 className={styles.occTitle}>Okupansi Studio Hari Ini</h4>
                                 <p className={styles.occSub}>{AGENDA_DATA.occupancyUsed} dari {AGENDA_DATA.occupancyTotal} slot waktu terisi ({AGENDA_DATA.occupancyPct}% Kapasitas Terpakai)</p>
@@ -293,7 +291,7 @@ export default function DailyAgendaPage() {
             </main>
 
             {/* Modal Walk-In Dinamis */}
-            <WalkInModal 
+            <WalkInModal
                 isOpen={isWalkInOpen}
                 onClose={() => setIsWalkInOpen(false)}
                 onConfirm={handleSaveWalkIn}
