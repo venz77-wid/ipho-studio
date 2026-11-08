@@ -42,3 +42,19 @@ export async function logout(): Promise<{ error: string | null }> {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     return { error: error ? 'Logout gagal. Silakan coba lagi.' : null };
 }
+
+/** Mulai login Google: mengembalikan URL Google; browser lalu diarahkan ke sana. */
+export async function signInWithGoogle(): Promise<{ url: string } | { error: string }> {
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const supabase = await createAuthClient(true);
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${siteUrl}/auth/callback` },
+    });
+
+    if (error || !data.url) {
+        return { error: 'Tidak dapat memulai login Google. Silakan coba lagi.' };
+    }
+    return { url: data.url };
+}

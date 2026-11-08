@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 import { login } from './actions';
 import styles from './page.module.css';
+import GoogleButton from '@/components/GoogleButton';
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -70,6 +72,13 @@ export default function LoginPage() {
                         </p>
                     </div>
 
+                    <div className={styles.socialSingle}>
+                        <GoogleButton className={styles.socialBtn} label="Masuk dengan Google" onError={setErrorMessage} />
+                    </div>
+
+                    <div className={styles.divider}>
+                        <span>ATAU DENGAN EMAIL</span>
+                    </div>
                     <form onSubmit={handleLogin} className={styles.form} aria-busy={isLoading}>
                         <div className={styles.inputGroup}>
                             <label htmlFor="email" className={styles.label}>EMAIL</label>
@@ -127,6 +136,11 @@ export default function LoginPage() {
                             {!isLoading && <ArrowRight size={18} aria-hidden />}
                         </button>
                     </form>
+
+                    <p className={styles.switchText}>
+                        Belum punya akun?{' '}
+                        <Link href="/register" className={styles.switchLink}>Daftar</Link>
+                    </p>
 
                     <div className={styles.rightFooter}>
                         <Lock size={12} aria-hidden />
