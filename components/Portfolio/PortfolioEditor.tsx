@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
     ArrowDown, ArrowLeft, ArrowUp, ArrowUpRight, Check, Eye, GripVertical, Monitor, Plus, Search, Smartphone,
 } from 'lucide-react';
+import AdminRowAction from '@/components/AdminRowAction/AdminRowAction';
 import PortfolioGallery from './PortfolioGallery';
 import PortfolioPhotoDialog, { photoSrc, type DraftPhoto, type LocalPhoto } from './PortfolioPhotoDialog';
 import { PORTFOLIO_MAX_PHOTOS, type PortfolioCategory, type PortfolioPackage, type PortfolioSnapshot } from '@/lib/portfolioTypes';
@@ -260,14 +261,12 @@ export default function PortfolioEditor({ initial, categories, packages, ready, 
                                     {photo.visible ? 'Tampil' : 'Disembunyikan'}
                                 </label>
                                 <button className={styles.button} type="button" disabled={busy} onClick={() => setEditing(photo)}>Edit</button>
-                                <details className={styles.rowMenu}>
-                                    <summary aria-label={`Tindakan untuk ${photo.title}`}>⋮</summary>
-                                    <button type="button" disabled={busy} onClick={() => {
+                                <AdminRowAction label={`Tindakan untuk ${photo.title}`} action="Hapus dari Portofolio" danger
+                                    disabled={busy} onAction={() => {
                                         if (window.confirm(`Hapus “${photo.title}” dari portofolio? Foto sumber tetap tersedia.`)) {
                                             setPhotos((current) => current.filter((item) => item.id !== photo.id));
                                         }
-                                    }}>Hapus dari Portofolio</button>
-                                </details>
+                                    }} />
                             </li>
                         );
                     })}

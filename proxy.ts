@@ -117,10 +117,10 @@ export async function proxy(request: NextRequest) {
         return go(profile.role === 'admin' ? '/admin' : '/');
     }
 
-    // Admin membuka beranda -> ke dashboard admin
-    if (path === '/' && profile.role === 'admin') {
-        return go('/admin');
-    }
+    // // Admin membuka beranda -> ke dashboard admin
+    // if (path === '/' && profile.role === 'admin') {
+    //     return go('/admin');
+    // }
 
     return finish(response);
 }

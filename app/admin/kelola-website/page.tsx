@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { requireAdmin } from '@/lib/auth/requireAdmin';
+import { loadAdminCatalog } from '@/lib/adminCatalogData';
+import AdminCatalog from '@/components/AdminCatalog/AdminCatalog';
 import { ArrowUpRight, Camera, Images, Info } from 'lucide-react';
 import AdminScheduleShell from '@/components/AdminSchedule/AdminScheduleShell';
 import { loadStudioContent } from '@/lib/studioContentData';
@@ -15,8 +19,11 @@ const tabs = [
 export default async function ManageWebsitePage({ searchParams }: {
     searchParams: Promise<{ tab?: string }>;
 }) {
+    const auth = await requireAdmin();
+    if (!auth.ok) redirect(auth.status === 401 ? '/login' : '/');
     const { tab } = await searchParams;
     const active = tabs.find(({ key }) => key === tab)?.key ?? 'paket';
+    const catalog = active === 'paket' ? await loadAdminCatalog().catch(() => null) : null;
     const site = active === 'tentang' ? await loadStudioContent().catch(() => null) : null;
     const published = site?.publishedAt ? new Intl.DateTimeFormat('id-ID', {
         dateStyle: 'medium', timeStyle: 'short', timeZone: STUDIO_TIME_ZONE,
@@ -37,11 +44,10 @@ export default async function ManageWebsitePage({ searchParams }: {
                     </Link>
                 ))}
             </nav>
-            {active === 'paket' && <section className={styles.card}>
-                <h2>Katalog Paket</h2>
-                <p>Pelanggan bisa melihat paket yang tersedia di katalog. Editor paket belum tersedia.</p>
-                <Link className={styles.button} href="/katalog">Lihat Katalog <ArrowUpRight size={14} /></Link>
-            </section>}
+            {active === 'paket' && (catalog
+                ? <AdminCatalog initial={catalog.packages} categories={catalog.categories} />
+                : <section className={styles.card}><h2>Katalog Paket</h2><p role="alert">Daftar paket belum dapat dimuat. Coba muat ulang halaman.</p></section>
+            )}
             {active === 'portofolio' && <section className={styles.card}>
                 <h2>Galeri Portofolio</h2>
                 <p>Pilih foto, atur kategori dan urutan, lalu tinjau sebelum dipublikasikan.</p>
