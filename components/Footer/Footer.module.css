@@ -1,4 +1,5 @@
 .footer {
+    container: footer / inline-size;
     background: #fff;
 }
 
@@ -64,7 +65,7 @@
     color: #52525b;
 }
 
-@media (max-width: 900px) {
+@container footer (max-width: 900px) {
     .inner {
         padding: 40px 20px 28px;
     }

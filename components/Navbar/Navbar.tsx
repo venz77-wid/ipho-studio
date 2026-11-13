@@ -20,8 +20,9 @@ const NAV_LINKS: NavLink[] = [
     { label: 'Tentang & Kontak', href: '/tentang' },
 ];
 
-export default function Navbar(): React.JSX.Element {
-    const pathname = usePathname();
+export default function Navbar({ activePath }: { activePath?: string } = {}): React.JSX.Element {
+    const currentPath = usePathname();
+    const pathname = activePath ?? currentPath;
     const mobile = useRef<HTMLDetailsElement>(null);
     const isActive = (href: string): boolean =>
         href === '/' ? pathname === '/' : pathname.startsWith(href);

@@ -1,0 +1,652 @@
+.editor {
+    color: #0f172a;
+    display: grid;
+    gap: 28px;
+}
+
+.heading,
+.sectionHead,
+.toolbar {
+    min-width: 0;
+}
+
+.breadcrumb,
+.heading small {
+    font-size: 12px;
+    color: #475569;
+}
+
+.breadcrumb a {
+    color: inherit;
+}
+
+.headingRow,
+.sectionHead,
+.filterRow,
+.actionBar,
+.previewBar,
+.drawerHeader,
+.drawerFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.headingRow {
+    margin: 14px 0 10px;
+}
+
+.heading h1,
+.sectionHead h2,
+.drawerHeader h2 {
+    margin: 0;
+    letter-spacing: -.035em;
+}
+
+.heading h1 {
+    font-size: clamp(27px, 4vw, 38px);
+}
+
+.heading p,
+.sectionHead p,
+.drawerHeader p {
+    margin: 6px 0 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.card {
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #e1e6ef;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px #0f172a08;
+}
+
+.card>summary {
+    cursor: pointer;
+    padding: 18px 24px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.card[open]>summary {
+    border-bottom: 1px solid #e9edf5;
+}
+
+.introFields,
+.twoColumns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 18px;
+}
+
+.introFields,
+.sectionHead {
+    padding: 22px 24px;
+}
+
+.sectionTitle,
+.searchRow,
+.actionButtons,
+.order {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 4px;
+    background: #eef1fb;
+    color: #354764;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.introFields label,
+.drawerBody label {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.editor input:not([type='checkbox']),
+.editor select,
+.editor textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid #d7dfeb;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 13px;
+}
+
+.editor textarea {
+    resize: vertical;
+}
+
+.toolbar {
+    display: grid;
+    gap: 9px;
+    padding: 14px 24px;
+    background: #f5f7fc;
+    border-block: 1px solid #e9edf5;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #d7dfeb;
+    border-radius: 6px;
+    padding-left: 10px;
+    min-width: 180px;
+}
+
+.search input:not([type='checkbox']) {
+    border: 0;
+    background: transparent;
+}
+
+.searchRow select {
+    width: auto;
+    max-width: 100%;
+}
+
+.filterRow small {
+    color: #475569;
+}
+
+.segments {
+    display: inline-flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 3px;
+    border-radius: 6px;
+    padding: 3px;
+    background: #edf0fa;
+}
+
+.segments button,
+.arrows button,
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font: inherit;
+    border: 0;
+    background: transparent;
+    color: #334155;
+    cursor: pointer;
+}
+
+.segments button {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.segments button[aria-pressed='true'] {
+    background: #fff;
+    box-shadow: 0 1px 3px #0f172a15;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.button,
+.primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid #d7dfeb;
+    border-radius: 6px;
+    color: #0f172a;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primary {
+    border-color: #09090b;
+    background: #09090b;
+    color: #fff;
+}
+
+.button:hover:not(:disabled) {
+    background: #f3f6fb;
+}
+
+.primary:hover:not(:disabled) {
+    background: #262a34;
+}
+
+.editor button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.photoRow {
+    display: grid;
+    grid-template-columns: auto 68px minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 20px;
+}
+
+.photoRow+.photoRow {
+    border-top: 1px solid #e9edf5;
+}
+
+.photoRow[data-hidden='true'] {
+    background: #f8fafc;
+}
+
+.photoRow[data-hidden='true'] .thumb {
+    opacity: .65;
+}
+
+.order {
+    flex-wrap: nowrap;
+    color: #475569;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.grip {
+    display: grid;
+    place-items: center;
+    cursor: grab;
+}
+
+.arrows {
+    display: grid;
+}
+
+.arrows button {
+    width: 24px;
+    height: 26px;
+}
+
+.thumb {
+    width: 68px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 5px;
+    background: #edf0fa;
+}
+
+.photoText {
+    overflow-wrap: anywhere;
+}
+
+.photoText strong {
+    font-size: 14px;
+}
+
+.photoText .badge {
+    margin: 4px 0 0 6px;
+}
+
+.photoText p {
+    margin: 4px 0 0;
+    color: #475569;
+    font-size: 12px;
+}
+
+.switchLabel,
+.drawerBody .switchLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.switchLabel input {
+    appearance: none;
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex: 0 0 36px;
+    margin: 0;
+    border-radius: 20px;
+    background: #c3cbd9;
+    cursor: inherit;
+}
+
+.switchLabel input:checked {
+    background: #09090b;
+}
+
+.switchLabel input::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.switchLabel input:checked::after {
+    left: 19px;
+}
+
+.rowMenu {
+    position: relative;
+}
+
+.rowMenu summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 6px 9px;
+}
+
+.rowMenu summary::-webkit-details-marker {
+    display: none;
+}
+
+.rowMenu button {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 2;
+    white-space: nowrap;
+    padding: 9px 12px;
+    color: #991b1b;
+    background: #fff;
+    border: 1px solid #e1e6ef;
+    border-radius: 6px;
+    box-shadow: 0 3px 12px #0f172a17;
+    cursor: pointer;
+}
+
+.empty {
+    padding: 20px 24px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.error {
+    margin: 0;
+    padding: 8px 11px;
+    border-radius: 6px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.actionBar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: 13px 18px;
+    background: #fff;
+    border: 1px solid #e1e6ef;
+    border-radius: 10px;
+    box-shadow: 0 -2px 15px #0f172a0a;
+}
+
+.actionBar p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.dirtyDot,
+.savedDot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 7px;
+    background: #94a3b8;
+}
+
+.dirtyDot {
+    background: #f59e0b;
+}
+
+.drawer,
+.previewDialog {
+    padding: 0;
+    border: 0;
+    color: #0f172a;
+    font-family: inherit;
+}
+
+.drawer::backdrop,
+.previewDialog::backdrop {
+    background: #11182766;
+}
+
+.drawer {
+    position: fixed;
+    inset: 0 0 0 auto;
+    margin: 0;
+    width: min(100%, 570px);
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    box-shadow: -10px 0 35px #0f172a22;
+}
+
+.drawerForm {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.drawerHeader,
+.drawerFooter {
+    padding: 18px 24px;
+    border-bottom: 1px solid #e9edf5;
+}
+
+.drawerHeader {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
+.drawerFooter {
+    border-bottom: 0;
+    border-top: 1px solid #e9edf5;
+}
+
+.drawerBody {
+    min-height: 0;
+    overflow: auto;
+    display: grid;
+    align-content: start;
+    gap: 17px;
+    padding: 18px 24px 24px;
+}
+
+.packagePicker {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(90px, 21%);
+    gap: 8px;
+    padding: 4px;
+    overflow-x: auto;
+}
+
+.packagePicker button {
+    display: grid;
+    position: relative;
+    align-content: start;
+    gap: 5px;
+    padding: 4px;
+    border: 1px solid #d7dfeb;
+    border-radius: 5px;
+    background: #fff;
+    color: #0f172a;
+    text-align: left;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.packagePicker button[aria-pressed='true'] {
+    border: 2px solid #0a0a0a;
+    padding: 3px;
+}
+
+.packagePicker img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+.packagePicker svg {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: #fff;
+    background: #09090b;
+    border-radius: 50%;
+}
+
+.uploadField,
+.crop {
+    padding: 14px;
+    border-radius: 8px;
+    background: #f1f3fc;
+}
+
+.cropImage {
+    position: relative;
+    width: min(100%, 260px);
+    margin: 0 auto 12px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.cropImage img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.twoColumns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.previewDialog {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    background: #eef0f7;
+    overflow: auto;
+}
+
+.previewBar {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    padding: 12px 22px;
+    border-bottom: 1px solid #e1e6ef;
+    background: #fff;
+    font-size: 14px;
+}
+
+.desktopFrame,
+.mobileFrame {
+    margin: 20px auto;
+    width: calc(100% - 32px);
+    max-width: 1540px;
+    background: #fff;
+    border: 1px solid #d7dfeb;
+}
+
+.mobileFrame {
+    max-width: 390px;
+}
+
+.editor :is(button, input, textarea, select, summary, a):focus-visible {
+    outline: 2px solid #315ba6;
+    outline-offset: 2px;
+}
+
+@media (max-width: 1050px) {
+    .photoRow {
+        grid-template-columns: auto 56px minmax(0, 1fr) auto;
+        gap: 10px;
+    }
+
+    .thumb {
+        width: 56px;
+        height: 68px;
+    }
+
+    .photoRow>.switchLabel {
+        grid-column: 2 / 4;
+    }
+
+    .photoRow>.button {
+        grid-column: 4;
+        grid-row: 1;
+    }
+
+    .rowMenu {
+        justify-self: end;
+    }
+}
+
+@media (max-width: 580px) {
+    .editor {
+        gap: 18px;
+    }
+
+    .introFields {
+        grid-template-columns: 1fr;
+    }
+
+    .introFields,
+    .sectionHead,
+    .toolbar,
+    .photoRow,
+    .drawerBody {
+        padding-inline: 13px;
+    }
+
+    .order {
+        gap: 2px;
+    }
+
+    .actionBar {
+        padding: 10px;
+    }
+}
