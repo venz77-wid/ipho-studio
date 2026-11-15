@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import AdminSidebar from '@/components/AdminSchedule/AdminSidebar';
 import { CASHIER_METHODS, adminPackageImage, adminPaymentLabel } from '@/lib/adminBookingOperations';
+import { orderDetailBack } from '@/lib/adminOrderFilters';
 import { agendaHref, isRoomFilter, isScheduleDate } from '@/lib/adminSchedule';
 import { OrderOperationButtons } from '@/components/AdminBookingOperations/BookingOperationButtons';
 import type { AdminOrderDetail } from '@/lib/adminTypes';
@@ -90,10 +91,11 @@ async function fetchOrder(id: string): Promise<AdminOrderDetail> {
 
 export default function OrderDetailPage({ params, searchParams }: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ room?: string | string[]; tanggal?: string | string[] }>;
+    searchParams: Promise<{ room?: string | string[]; tanggal?: string | string[]; daftar?: string | string[] }>;
 }) {
     const { id } = use(params);
-    const { room, tanggal } = use(searchParams);
+    const { room, tanggal, daftar } = use(searchParams);
+    const listBack = typeof daftar === 'string' ? orderDetailBack(daftar) : null;
 
     // Data pesanan diambil dari database lewat /api/admin/orders/[id]
     const [order, setOrder] = useState<AdminOrderDetail | null>(null);
@@ -125,18 +127,18 @@ export default function OrderDetailPage({ params, searchParams }: {
         return (
             <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
                 <p>{loadState === 'loading' ? 'Memuat pesanan...' : loadError}</p>
-                <p style={{ marginTop: 16 }}><Link href="/admin">Kembali ke Dashboard</Link></p>
+                <p style={{ marginTop: 16 }}><Link href={listBack ?? '/admin'}>{listBack ? 'Kembali ke Pesanan' : 'Kembali ke Dashboard'}</Link></p>
             </div>
         );
     }
 
     const orderData = toOrderView(order);
-    const back = agendaHref(isScheduleDate(tanggal) ? tanggal : order.bookingDate, isRoomFilter(room) ? room : 'all');
+    const back = listBack ?? agendaHref(isScheduleDate(tanggal) ? tanggal : order.bookingDate, isRoomFilter(room) ? room : 'all');
     async function reload() { setOrder(await fetchOrder(id)); }
 
     return (
         <div className={styles.adminLayout}>
-            <AdminSidebar section="calendar" />
+            <AdminSidebar section={listBack ? 'orders' : 'calendar'} />
 
             {/* MAIN CONTENT */}
             <main className={styles.mainContent}>
@@ -166,7 +168,7 @@ export default function OrderDetailPage({ params, searchParams }: {
                     <div className={styles.topActions}>
                         <Link href={back} className={styles.backBtn}>
                             <ArrowLeft size={16} />
-                            Kembali ke Agenda Harian
+                            {listBack ? 'Kembali ke Pesanan' : 'Kembali ke Agenda Harian'}
                         </Link>
                         <div className={styles.breadcrumbPaths}>
                             <span>ADMIN</span> <span>/</span> <span>PESANAN</span> <span>/</span> <span className={styles.currentPath}>{orderData.id}</span>
