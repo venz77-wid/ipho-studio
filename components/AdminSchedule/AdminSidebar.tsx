@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Globe, LayoutDashboard, Receipt, Settings2 } from 'lucide-react';
+import { CalendarDays, ChartNoAxesCombined, Globe, LayoutDashboard, Receipt, Settings2 } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
 import styles from '@/app/admin/kalender/page.module.css';
 
@@ -8,6 +8,7 @@ const sections = [
     { id: 'dashboard', href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
     { id: 'calendar', href: '/admin/kalender', label: 'Rekap Kalender', Icon: CalendarDays },
     { id: 'orders', href: '/admin/pesanan', label: 'Pesanan', Icon: Receipt },
+    { id: 'finance', href: '/admin/laporan', label: 'Laporan & Keuangan', Icon: ChartNoAxesCombined },
     { id: 'website', href: '/admin/kelola-website', label: 'Kelola Website', Icon: Globe },
     { id: 'hours', href: '/admin/operasional', label: 'Ruangan & Operasional', Icon: Settings2 },
 ] as const;
