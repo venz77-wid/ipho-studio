@@ -1,0 +1,480 @@
+.orders {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
+    color: #0f172a;
+    container-type: inline-size;
+}
+
+.heading h2 {
+    margin: 0;
+    font-size: clamp(28px, 5cqw, 39px);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+}
+
+.heading p {
+    margin: 7px 0 0;
+    color: #475569;
+    font-size: 14px;
+}
+
+.filters,
+.results,
+.empty {
+    background: #fff;
+    border: 1px solid #e1e6f2;
+    border-radius: 10px;
+}
+
+.filters {
+    display: grid;
+    gap: 14px;
+    padding: 15px;
+}
+
+.search,
+.fields select,
+.dateRange input {
+    border: 1px solid #e6eaf6;
+    border-radius: 6px;
+    background: #f3f5fc;
+    color: #0f172a;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    color: #475569;
+}
+
+.search input {
+    width: 100%;
+    min-width: 0;
+    min-height: 41px;
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font: inherit;
+    font-size: 14px;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.65fr) repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.fields>label,
+.dateRange,
+.dateRange label {
+    min-width: 0;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.fields>label {
+    display: grid;
+    gap: 5px;
+}
+
+.dateRange {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.dateRange legend {
+    margin-bottom: 5px;
+    padding: 0;
+}
+
+.dateRange label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 6px;
+    background: #f3f5fc;
+    border-radius: 6px;
+}
+
+.fields select,
+.dateRange input {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    padding: 5px 6px;
+    font: inherit;
+    font-size: 12px;
+}
+
+.dateRange input {
+    border: 0;
+}
+
+.filterActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    grid-column: 1 / -1;
+    gap: 8px;
+}
+
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid #0a0a0a;
+    border-radius: 5px;
+    background: #0a0a0a;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.primary:hover {
+    background: #252a35;
+}
+
+.secondary {
+    border-color: #dce3f0;
+    background: #f7f8fc;
+    color: #334155;
+}
+
+.secondary:hover {
+    background: #eef1fa;
+}
+
+.orders :is(a, button, input, select):focus-visible {
+    outline: 2px solid #315ba6;
+    outline-offset: 2px;
+}
+
+.table {
+    width: 100%;
+    border-spacing: 0;
+    table-layout: fixed;
+    text-align: left;
+}
+
+.table :is(th, td) {
+    padding: 14px 10px;
+    border-bottom: 1px solid #edf0f8;
+    font-size: 13px;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.table thead th {
+    background: #f4f5fc;
+    color: #475569;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+}
+
+.table thead th:first-child {
+    width: 21%;
+    border-top-left-radius: 10px;
+}
+
+.table thead th:nth-child(2) {
+    width: 15%;
+}
+
+.table thead th:nth-child(3) {
+    width: 16%;
+}
+
+.table thead th:nth-child(4) {
+    width: 9%;
+}
+
+.table thead th:nth-child(5) {
+    width: 13%;
+}
+
+.table thead th:last-child {
+    width: 120px;
+    border-top-right-radius: 10px;
+    text-align: right;
+}
+
+.order {
+    font-weight: 500;
+}
+
+.order> :is(strong, span, small),
+.schedule> :is(span, small),
+.amount> :is(strong, small) {
+    display: block;
+}
+
+.order strong {
+    font-size: 12px;
+}
+
+.order span,
+.order small,
+.schedule small,
+.amount small {
+    margin-top: 4px;
+}
+
+.order small,
+.schedule small,
+.amount small,
+.action small {
+    color: #475569;
+    font-size: 11px;
+}
+
+.schedule small {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.schedule small svg {
+    flex: none;
+}
+
+.amount strong {
+    font-size: 13px;
+}
+
+.source,
+.payment,
+.session {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 3px 6px;
+    background: #e4ebfb;
+    color: #263a68;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.source[data-source='walk_in'] {
+    background: #efe8fb;
+    color: #533584;
+}
+
+.payment {
+    margin-bottom: 4px;
+}
+
+.payment[data-state='paid'] {
+    background: #e3f5e9;
+    color: #135b3f;
+}
+
+.payment:is([data-state='pending'], [data-state='review'], [data-state='unpaid']) {
+    background: #fff2db;
+    color: #784609;
+}
+
+.payment:is([data-state='cancelled'], [data-state='expired']) {
+    background: #fce9e9;
+    color: #8c2929;
+}
+
+.session {
+    background: #eef1f7;
+    color: #46536b;
+}
+
+.session[data-state='ongoing'] {
+    background: #e4eafa;
+    color: #253f82;
+}
+
+.status>span {
+    display: table;
+}
+
+.action {
+    text-align: right;
+}
+
+.action svg {
+    flex: none;
+}
+
+.mobileLabel,
+.schedule>.mobileLabel {
+    display: none;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 15px;
+    color: #475569;
+    font-size: 13px;
+}
+
+.pagination nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pagination nav>* {
+    display: grid;
+    place-items: center;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 5px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.pagination nav a:hover {
+    background: #eef1fa;
+}
+
+.pagination [aria-current='page'] {
+    background: #0a0a0a;
+    color: #fff;
+}
+
+.empty {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 10px;
+    min-height: 290px;
+    padding: 24px;
+    text-align: center;
+}
+
+.empty>svg {
+    color: #485d8c;
+}
+
+.empty h3,
+.empty p {
+    margin: 0;
+}
+
+.empty p {
+    color: #475569;
+    font-size: 14px;
+}
+
+@container (max-width: 890px) {
+    .fields {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dateRange {
+        grid-column: 1 / -1;
+        max-width: 380px;
+    }
+
+    .results {
+        background: transparent;
+        border: 0;
+    }
+
+    .table,
+    .table tbody {
+        display: block;
+    }
+
+    .table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+
+    .table tr {
+        display: grid;
+        align-items: start;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 10px;
+        margin-bottom: 10px;
+        background: #fff;
+        border: 1px solid #e1e6f2;
+        border-radius: 10px;
+    }
+
+    .table :is(th, td) {
+        border: 0;
+        padding: 6px;
+    }
+
+    .table .order {
+        grid-column: 1;
+        grid-row: 1 / 3;
+    }
+
+    .table .package {
+        grid-column: 1;
+    }
+
+    .table .schedule {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .table .status {
+        grid-column: 1 / -1;
+    }
+
+    .status>span {
+        display: inline-block;
+        margin: 0 6px 0 0;
+    }
+
+    .table .action {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+
+    .mobileLabel,
+    .schedule>.mobileLabel {
+        display: block;
+        margin-bottom: 3px;
+        color: #475569;
+        font-size: 10px;
+        font-weight: 650;
+    }
+
+    .pagination {
+        padding-inline: 4px;
+    }
+}
+
+@container (max-width: 460px) {
+    .fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .filterActions {
+        justify-content: flex-start;
+    }
+}
