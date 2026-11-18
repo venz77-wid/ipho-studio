@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { SLOT_START_TIMES, calculateEndTime, isSlotInPast } from '@/lib/scheduleUtils';
+import { studioSlots, calculateEndTime, isSlotInPast } from '@/lib/scheduleUtils';
 import { isBookingDate, loadRoomAvailability } from '@/lib/roomAvailability';
 import {
     ENABLED_PAYMENTS,
@@ -29,7 +29,7 @@ const fail = (status: number, error: string) => NextResponse.json({ error }, { s
 function validate(b: Partial<CreateBody>): string | null {
     if (typeof b.packageSlug !== 'string' || !b.packageSlug) return 'Paket tidak valid.';
     if (typeof b.bookingDate !== 'string' || !isBookingDate(b.bookingDate)) return 'Tanggal tidak valid.';
-    if (typeof b.startTime !== 'string' || !SLOT_START_TIMES.some((s) => s.startTime === b.startTime)) {
+    if (typeof b.startTime !== 'string' || !studioSlots(b.bookingDate).some((s) => s.startTime === b.startTime)) {
         return 'Jam sesi tidak valid.';
     }
     if (typeof b.requestId !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(b.requestId)) {
@@ -140,6 +140,7 @@ async function createPayment(b: CreateBody): Promise<NextResponse> {
             bookingId = data.id;
             break;
         }
+        if (error.code === '23514' && error.message.includes('jam operasional')) return fail(409, error.message);
         if (error.code !== '23P01' && error.code !== '23505') throw error;
         const concurrentOrder = await findExistingOrder();
         if (concurrentOrder) return concurrentOrder;

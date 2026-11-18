@@ -4,17 +4,17 @@ import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-    LayoutDashboard, CalendarDays, Calendar, Users,
+    Calendar, Users,
     ArrowLeft, Printer, User, CheckCircle2, Aperture, Clock,
     AlignLeft, Receipt, Zap
 } from 'lucide-react';
-import LogoutButton from '@/components/LogoutButton';
+import AdminSidebar from '@/components/AdminSchedule/AdminSidebar';
 import { CASHIER_METHODS, adminPackageImage, adminPaymentLabel } from '@/lib/adminBookingOperations';
 import { agendaHref, isRoomFilter, isScheduleDate } from '@/lib/adminSchedule';
 import { OrderOperationButtons } from '@/components/AdminBookingOperations/BookingOperationButtons';
 import type { AdminOrderDetail } from '@/lib/adminTypes';
 import { PAYMENT_METHOD_LABEL, formatBookingDate } from '@/lib/bookingFormat';
-import { getNowWIB } from '@/lib/scheduleUtils';
+import { getStudioNow, STUDIO_TIME_ZONE } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
 
 const formatRupiah = (angka: number) => {
@@ -42,20 +42,19 @@ interface OrderView {
     allocation: { date: string; start: string; end: string; dayStart: string; dayEnd: string };
 }
 
-const WIB = 'Asia/Jakarta';
 const shortDate = (iso: string): string =>
-    new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: WIB });
+    new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: STUDIO_TIME_ZONE });
 const dateTime = (iso: string): string =>
-    `${shortDate(iso)}, ${new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: WIB }).replace('.', ':')} WIB`;
+    `${shortDate(iso)}, ${new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: STUDIO_TIME_ZONE }).replace('.', ':')} WITA`;
 
 // Mengubah data database menjadi bentuk yang dipakai tampilan halaman ini
 const toOrderView = (o: AdminOrderDetail): OrderView => {
     const paid = o.paidAmount;
-    const time = `${o.startTime} - ${o.endTime} WIB`;
+    const time = `${o.startTime} - ${o.endTime} WITA`;
     return {
         id: `#${o.orderId}`,
         status: adminPaymentLabel(o.status, paid, o.totalAmount, o.requiresScheduleReview).toUpperCase(),
-        isActiveToday: o.status === 'confirmed' && !o.completedAt && o.bookingDate === getNowWIB().date,
+        isActiveToday: o.status === 'confirmed' && !o.completedAt && o.bookingDate === getStudioNow().date,
         createdAt: o.createdAt ? shortDate(o.createdAt) : 'Tidak tercatat',
         scheduleDate: formatBookingDate(o.bookingDate),
         scheduleTime: time,
@@ -137,36 +136,7 @@ export default function OrderDetailPage({ params, searchParams }: {
 
     return (
         <div className={styles.adminLayout}>
-            {/* SIDEBAR */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarTop}>
-                    <div className={styles.brand}>
-                        <div>
-                            <h1 className={styles.brandName}>IPHO STUDIO</h1>
-                            <p className={styles.brandRole}>ADMIN PANEL</p>
-                        </div>
-                        <div className={styles.dotIndicator} />
-                    </div>
-
-                    <div className={styles.navGroup}>
-                        <p className={styles.navLabel}>NAVIGATION</p>
-                        <nav className={styles.navMenu}>
-                            <Link href="/admin" className={styles.navItem}>
-                                <LayoutDashboard size={18} />
-                                Dashboard
-                            </Link>
-                            <Link href="/admin/kalender" className={styles.navItem}>
-                                <CalendarDays size={18} />
-                                Rekap Kalender
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
-
-                <div className={styles.sidebarBottom}>
-                    <LogoutButton className={styles.logoutBtn} />
-                </div>
-            </aside>
+            <AdminSidebar section="calendar" />
 
             {/* MAIN CONTENT */}
             <main className={styles.mainContent}>
@@ -394,7 +364,7 @@ export default function OrderDetailPage({ params, searchParams }: {
                                 <ul className={styles.operationLog}>
                                     {order.reschedules.map((item, index) => <li key={index}>
                                         {formatBookingDate(item.old_booking_date)} {item.old_start_time.slice(0, 5)} →{' '}
-                                        {formatBookingDate(item.new_booking_date)} {item.new_start_time.slice(0, 5)} WIB
+                                        {formatBookingDate(item.new_booking_date)} {item.new_start_time.slice(0, 5)} WITA
                                         <br />{item.reason}
                                     </li>)}
                                 </ul>

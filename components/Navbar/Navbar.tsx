@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useRef } from 'react';
 import LogoutButton from '@/components/LogoutButton';
 import styles from './Navbar.module.css';
 
@@ -21,7 +22,7 @@ const NAV_LINKS: NavLink[] = [
 
 export default function Navbar(): React.JSX.Element {
     const pathname = usePathname();
-
+    const mobile = useRef<HTMLDetailsElement>(null);
     const isActive = (href: string): boolean =>
         href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -29,7 +30,6 @@ export default function Navbar(): React.JSX.Element {
         <header className={styles.header}>
             <div className={styles.inner}>
                 <Link href="/" className={styles.brand}>
-                    {/* File: public/images/logo.png */}
                     <Image
                         src="/images/logo.png"
                         alt="IPHO Studio Logo"
@@ -44,6 +44,7 @@ export default function Navbar(): React.JSX.Element {
                         <Link
                             key={link.href}
                             href={link.href}
+                            aria-current={isActive(link.href) ? 'page' : undefined}
                             className={isActive(link.href) ? `${styles.link} ${styles.active}` : styles.link}
                         >
                             {link.label}
@@ -51,6 +52,16 @@ export default function Navbar(): React.JSX.Element {
                     ))}
                 </nav>
 
+                <details ref={mobile} className={styles.mobileMenu}>
+                    <summary>Menu</summary>
+                    <nav aria-label="Navigasi seluler">
+                        {NAV_LINKS.map((link) => <Link href={link.href} key={link.href}
+                            aria-current={isActive(link.href) ? 'page' : undefined}
+                            onClick={() => { if (mobile.current) mobile.current.open = false; }}>
+                            {link.label}
+                        </Link>)}
+                    </nav>
+                </details>
                 <LogoutButton className={styles.logoutButton} />
             </div>
         </header>

@@ -77,3 +77,20 @@
         gap: 18px;
     }
 }
+
+.visit {
+    padding: 16px 0;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.visit dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 6px 0 0;
+}
+
+.visit dd {
+    margin: 0;
+}

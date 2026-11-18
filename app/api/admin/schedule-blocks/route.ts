@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { atWib, isRoomFilter, isScheduleDate } from '@/lib/adminSchedule';
+import { atStudioTime, isRoomFilter, isScheduleDate } from '@/lib/adminSchedule';
 import { addDays } from '@/lib/scheduleUtils';
 
 const validTime = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -28,8 +28,8 @@ export async function POST(req: Request) {
         return fail(400, 'Jam mulai atau selesai tidak valid.');
     }
 
-    const start = atWib(body.startDate, body.isAllDay ? '00:00' : body.startTime);
-    const end = body.isAllDay ? atWib(addDays(body.endDate, 1)) : atWib(body.endDate, body.endTime);
+    const start = atStudioTime(body.startDate, body.isAllDay ? '00:00' : body.startTime);
+    const end = body.isAllDay ? atStudioTime(addDays(body.endDate, 1)) : atStudioTime(body.endDate, body.endTime);
     if (!Number.isFinite(Date.parse(end)) || Date.parse(end) <= Date.parse(start) || Date.parse(end) <= Date.now()) {
         return fail(400, 'Akhir blokir harus setelah waktu mulai dan belum lewat.');
     }

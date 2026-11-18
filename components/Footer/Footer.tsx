@@ -1,9 +1,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Camera, MessageSquare } from 'lucide-react';
+import { loadStudioContent } from '@/lib/studioContentData';
+import { loadStudioHours } from '@/lib/studioHoursData';
+import { getStudioNow } from '@/lib/scheduleUtils';
+import { DEFAULT_STUDIO_CONTENT, studioWhatsApp } from '@/lib/studioContent';
+import StudioHoursSummary from '@/components/StudioContent/StudioHoursSummary';
 import styles from './Footer.module.css';
 
-export default function Footer(): React.JSX.Element {
+export default async function Footer() {
+    const [site, schedule] = await Promise.all([
+        loadStudioContent().catch(() => null),
+        loadStudioHours().catch(() => null),
+    ]);
+    const content = site?.content ?? DEFAULT_STUDIO_CONTENT;
+    const chat = studioWhatsApp(content.whatsapp);
     return (
         <footer className={styles.footer}>
             <div className={styles.inner}>
@@ -26,13 +37,19 @@ export default function Footer(): React.JSX.Element {
                     <nav className={styles.links} aria-label="Tautan footer">
                         <Link href="/syarat-ketentuan">Syarat &amp; Ketentuan</Link>
                         <Link href="/kebijakan-privasi">Kebijakan Privasi</Link>
-                        <a href="https://instagram.com/iphostudio" target="_blank" rel="noreferrer">
-                            <Camera size={14} aria-hidden /> Instagram @iphostudio
-                        </a>
-                        <a href="https://wa.me/" target="_blank" rel="noreferrer">
+                        <Link href="/tentang">Tentang &amp; Kontak</Link>
+                        {content.instagram && <a href={content.instagram} target="_blank" rel="noreferrer">
+                            <Camera size={14} aria-hidden /> Instagram
+                        </a>}
+                        {chat && <a href={chat} target="_blank" rel="noreferrer">
                             <MessageSquare size={14} aria-hidden /> WhatsApp CS
-                        </a>
+                        </a>}
                     </nav>
+                </div>
+                <div className={styles.visit}>
+                    <p>{content.address}</p>
+                    <strong>Jam Operasional · WITA</strong>
+                    <StudioHoursSummary hours={schedule?.hours ?? null} today={getStudioNow().date} />
                 </div>
 
                 <div className={styles.bottom}>

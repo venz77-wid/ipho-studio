@@ -110,3 +110,59 @@
     opacity: 0.6;
     cursor: wait;
 }
+
+.mobileMenu {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .inner {
+        height: 64px;
+        gap: 10px;
+    }
+
+    .brand {
+        gap: 5px;
+    }
+
+    .brand img {
+        width: 34px;
+        height: 34px;
+    }
+
+    .brandText {
+        font-size: 12px;
+    }
+
+    .mobileMenu {
+        display: block;
+        justify-self: end;
+        font-size: 13px;
+    }
+
+    .mobileMenu summary {
+        cursor: pointer;
+        padding: 8px 0;
+    }
+
+    .mobileMenu nav {
+        position: absolute;
+        inset: 100% 0 auto;
+        display: grid;
+        padding: 10px 20px;
+        background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .mobileMenu a {
+        padding: 9px;
+        text-decoration: none;
+        color: #0f172a;
+    }
+
+    .mobileMenu a[aria-current='page'] {
+        font-weight: 750;
+        background: #eef1fb;
+        border-radius: 6px;
+    }
+}

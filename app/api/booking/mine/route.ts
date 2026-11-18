@@ -1,3 +1,4 @@
+import { atStudioTime } from '@/lib/scheduleUtils';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { syncPendingBooking } from '@/lib/midtrans';
@@ -31,7 +32,7 @@ interface Row {
 function toPhase(status: Row['status'], date: string, end: string): BookingPhase {
     if (status === 'pending') return 'waiting';
     if (status === 'confirmed') {
-        const endAt = new Date(`${date}T${end.slice(0, 5)}:00+07:00`).getTime(); // WIB
+        const endAt = Date.parse(atStudioTime(date, end));
         return Date.now() > endAt ? 'done' : 'active';
     }
     return 'failed';

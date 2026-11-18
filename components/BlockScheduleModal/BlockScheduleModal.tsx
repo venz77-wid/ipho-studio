@@ -89,12 +89,12 @@ export default function BlockScheduleModal({ rooms, date, room, onClose, onConfi
                     {!form.isAllDay && (
                         <div className={styles.dateRow}>
                             <label className={styles.formGroup}>
-                                <span className={styles.labelTitle}>Jam mulai WIB</span>
+                                <span className={styles.labelTitle}>Jam mulai WITA</span>
                                 <input required type="time" className={styles.inputField} value={form.startTime} disabled={pending}
                                     onChange={(event) => change('startTime', event.target.value)} />
                             </label>
                             <label className={styles.formGroup}>
-                                <span className={styles.labelTitle}>Jam akhir WIB</span>
+                                <span className={styles.labelTitle}>Jam akhir WITA</span>
                                 <input required type="time" className={styles.inputField} value={form.endTime} disabled={pending}
                                     onChange={(event) => change('endTime', event.target.value)} />
                             </label>

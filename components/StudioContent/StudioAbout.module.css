@@ -1,0 +1,462 @@
+.surface {
+    background: #f6f7fc;
+}
+
+.page {
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4vw, 56px);
+    color: #131c2d;
+    overflow-wrap: anywhere;
+}
+
+.page {
+    padding-top: clamp(42px, 5vw, 72px);
+    padding-bottom: clamp(68px, 10vw, 144px);
+    font-size: 16px;
+}
+
+.page h1,
+.page h2,
+.page h3 {
+    line-height: 1.16;
+    letter-spacing: -.045em;
+}
+
+.page h1 {
+    margin: 0 0 10px;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 750;
+}
+
+.page h2 {
+    margin: 0 0 24px;
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 700;
+}
+
+.page h3 {
+    margin: 0 0 14px;
+    font-size: 23px;
+    font-weight: 650;
+}
+
+.page p {
+    margin: 0;
+    color: #3f495a;
+    line-height: 1.65;
+}
+
+.page .eyebrow,
+.facility small {
+    margin: 0 0 8px;
+    color: #3b4c65;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .055em;
+}
+
+.intro {
+    max-width: 780px;
+}
+
+.heroPhoto {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 7 / 3;
+    overflow: hidden;
+    margin: 24px 0 0;
+    border-radius: 5px;
+    background: #e9e6df;
+}
+
+.heroPhoto img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.heroPhoto figcaption {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    max-width: calc(100% - 36px);
+    border-radius: 4px;
+    padding: 10px 14px;
+    background: #f8f7f7;
+    color: #131c2d;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.section,
+.banner {
+    margin-top: clamp(52px, 5.6vw, 84px);
+}
+
+.story,
+.columns,
+.facilities {
+    display: grid;
+    gap: 20px;
+}
+
+.story {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: start;
+}
+
+.story h2 {
+    margin: 0;
+}
+
+.columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+}
+
+.facilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.facility,
+.card,
+.faq details {
+    background: #fff;
+    border-radius: 8px;
+}
+
+.facility {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 26px;
+}
+
+.facility:last-child:nth-child(3n + 2) {
+    grid-column: span 2;
+}
+
+.facility h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.facility p {
+    font-size: 15px;
+    margin-bottom: 16px;
+}
+
+.facility small {
+    margin: auto 0 0;
+}
+
+.icon {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 12px;
+    border-radius: 5px;
+    color: #33435b;
+    background: #e7edff;
+}
+
+.multiline {
+    white-space: pre-wrap;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: clamp(24px, 3.2vw, 44px);
+}
+
+.card h3 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+
+.columns .card {
+    min-height: 330px;
+}
+
+.page .address {
+    color: #131c2d;
+    font-weight: 650;
+}
+
+.note {
+    width: 100%;
+    margin: 16px 0 24px;
+    padding: 14px 16px;
+    background: #eef1fd;
+    border-radius: 5px;
+}
+
+.note .eyebrow {
+    margin-bottom: 4px;
+}
+
+.note p:last-child {
+    font-size: 14px;
+}
+
+.columns dl {
+    display: grid;
+    width: 100%;
+    gap: 10px;
+    margin: 5px 0 32px;
+}
+
+.columns dl div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.columns dt {
+    padding-top: 4px;
+    font-weight: 650;
+}
+
+.columns dd,
+.timeZone {
+    margin: 0;
+    padding: 4px 9px;
+    border-radius: 4px;
+    background: #e8eeff;
+    font-weight: 650;
+    text-align: right;
+}
+
+.timeZone {
+    font-size: 11px;
+    letter-spacing: .04em;
+}
+
+.page .hoursNote {
+    margin-top: auto;
+    font-size: 13px;
+}
+
+.hoursNote::before {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: #008660;
+    content: '';
+}
+
+.page .contactIntro {
+    margin: -16px 0 24px;
+}
+
+.contact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 30%);
+    align-items: center;
+    gap: 28px;
+}
+
+.contactDescription {
+    max-width: 650px;
+}
+
+.contactMeta {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.contactMeta a,
+.socials a {
+    color: #16243c;
+    text-underline-offset: 2px;
+}
+
+.contactActions,
+.socials {
+    display: grid;
+    gap: 10px;
+}
+
+.socials {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 48px;
+    padding: 10px 22px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 650;
+    text-align: center;
+}
+
+.primary {
+    color: #fff;
+    background: #090909;
+}
+
+.secondary {
+    color: #172033;
+    background: #f6f7fc;
+}
+
+.primary:hover {
+    background: #252c3a;
+}
+
+.secondary:hover {
+    background: #e9edfa;
+}
+
+.faq {
+    display: grid;
+    max-width: 76%;
+    gap: 9px;
+}
+
+.faq summary {
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 24px;
+    list-style: none;
+    font-size: 19px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.faq summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq summary svg {
+    flex: none;
+    color: #3c4e6c;
+}
+
+.faq details[open] summary svg {
+    transform: rotate(180deg);
+}
+
+.faq p {
+    padding: 0 24px 20px;
+}
+
+.banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 26px;
+    padding: clamp(26px, 5vw, 72px);
+    border-radius: 15px;
+    background: #e7edff;
+}
+
+.banner h2 {
+    margin-bottom: 9px;
+}
+
+.banner p {
+    max-width: 610px;
+}
+
+.banner .actions a {
+    min-height: 56px;
+    padding-inline: clamp(20px, 3vw, 44px);
+}
+
+@media (max-width: 1020px) {
+    .faq {
+        max-width: 88%;
+    }
+
+    .banner {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 760px) {
+    .heroPhoto {
+        aspect-ratio: 16 / 9;
+    }
+
+    .story,
+    .columns,
+    .contact {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .facilities {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .facility:last-child:nth-child(3n + 2) {
+        grid-column: auto;
+    }
+
+    .columns .card {
+        min-height: auto;
+    }
+
+    .contactActions {
+        justify-items: start;
+    }
+
+    .faq {
+        max-width: 100%;
+    }
+
+    .faq summary {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 460px) {
+    .facilities {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .columns dl div {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 3px;
+    }
+
+    .columns dd {
+        justify-self: start;
+        text-align: left;
+    }
+}

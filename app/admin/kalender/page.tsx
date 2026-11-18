@@ -3,18 +3,18 @@ import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock, Lock } from
 import AdminScheduleShell from '@/components/AdminSchedule/AdminScheduleShell';
 import { AddBlockButton } from '@/components/AdminSchedule/AdminScheduleControls';
 import {
-    agendaHref, atWib, blockOverlapsDate, calendarHref, dateLabel, isScheduleDate,
-    monthShift, roomFilter, scheduledHours, summarizeSchedule, WIB,
+    agendaHref, atStudioTime, blockOverlapsDate, calendarHref, dateLabel, isScheduleDate,
+    monthShift, roomFilter, scheduledHours, summarizeSchedule, STUDIO_TIME_ZONE,
     type RoomFilter, type ScheduleParams,
 } from '@/lib/adminSchedule';
 import { loadAdminSchedule, requireScheduleAdmin } from '@/lib/adminScheduleData';
-import { addDays, getNowWIB } from '@/lib/scheduleUtils';
+import { addDays, getStudioNow } from '@/lib/scheduleUtils';
 import styles from './page.module.css';
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<ScheduleParams> }) {
     await requireScheduleAdmin();
     const params = await searchParams;
-    const today = getNowWIB().date;
+    const today = getStudioNow().date;
     const month = typeof params.bulan === 'string' && /^\d{4}-\d{2}$/.test(params.bulan) &&
         isScheduleDate(params.bulan + '-01') ? params.bulan : today.slice(0, 7);
     const from = month + '-01';
@@ -26,8 +26,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     const selectedBlocks = blocks.filter((item) => room === 'all' || item.room_id === roomId);
     const stats = summarizeSchedule(selectedBookings);
 
-    const label = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: WIB })
-        .format(new Date(atWib(from)));
+    const label = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: STUDIO_TIME_ZONE })
+        .format(new Date(atStudioTime(from)));
     const offset = (new Date(from + 'T00:00:00Z').getUTCDay() + 6) % 7;
     const days = Number(addDays(until, -1).slice(-2));
     const cells = Math.ceil((days + offset) / 7) * 7;

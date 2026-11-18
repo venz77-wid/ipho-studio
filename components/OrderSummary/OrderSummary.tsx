@@ -62,7 +62,7 @@ export default function OrderSummary({
             <div className={styles.scheduleBox}>
                 <span className={styles.scheduleLabel}>JADWAL SESI TERPILIH</span>
                 <p className={styles.scheduleValue}>
-                    {selectedDate} | {selectedSlot ? `${selectedSlot.startTime} - ${selectedSlot.endTime} WIB` : 'Belum Dipilih'}
+                    {selectedDate} | {selectedSlot ? `${selectedSlot.startTime} - ${selectedSlot.endTime} WITA` : 'Belum Dipilih'}
                 </p>
                 <p className={styles.roomText}>Ruangan ditetapkan saat pesanan dibuat</p>
             </div>
