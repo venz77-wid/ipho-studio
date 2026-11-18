@@ -360,33 +360,9 @@
     left: 19px;
 }
 
-.rowMenu {
-    position: relative;
-}
-
-.rowMenu summary {
-    list-style: none;
-    cursor: pointer;
-    padding: 6px 9px;
-}
-
-.rowMenu summary::-webkit-details-marker {
-    display: none;
-}
-
-.rowMenu button {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    z-index: 2;
+.photoRow>.button {
+    min-width: 48px;
     white-space: nowrap;
-    padding: 9px 12px;
-    color: #991b1b;
-    background: #fff;
-    border: 1px solid #e1e6ef;
-    border-radius: 6px;
-    box-shadow: 0 3px 12px #0f172a17;
-    cursor: pointer;
 }
 
 .empty {
@@ -620,9 +596,6 @@
         grid-row: 1;
     }
 
-    .rowMenu {
-        justify-self: end;
-    }
 }
 
 @media (max-width: 580px) {

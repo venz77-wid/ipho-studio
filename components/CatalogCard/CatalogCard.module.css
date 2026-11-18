@@ -9,7 +9,7 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.card:hover {
+.card:not(.preview):hover {
     border-color: #dfe3fb;
     box-shadow: 0 10px 24px rgba(10, 10, 30, 0.15);
     transform: translateY(-8px);
@@ -167,7 +167,7 @@
     background-color: #dfe3fb;
 }
 
-.card:hover .cta {
+.card:not(.preview):hover .cta {
     background-color: #0a0a0a;
     color: #fff;
 }

@@ -14,13 +14,14 @@ const ICONS: Record<CapacityIcon, LucideIcon> = {
 
 interface CatalogCardProps {
     data: CatalogPackage;
+    preview?: boolean;
 }
 
-export default function CatalogCard({ data }: CatalogCardProps): React.JSX.Element {
+export default function CatalogCard({ data, preview = false }: CatalogCardProps): React.JSX.Element {
     const CapIcon = ICONS[data.capacityIcon];
 
     return (
-        <article className={styles.card}>
+        <article className={preview ? `${styles.card} ${styles.preview}` : styles.card}>
             <div className={styles.media}>
                 {data.imageSrc && (
                     // File di folder public, mis. public/images/packages/solofoto.jpg
@@ -28,6 +29,7 @@ export default function CatalogCard({ data }: CatalogCardProps): React.JSX.Eleme
                         src={data.imageSrc}
                         alt={data.title}
                         fill
+                        unoptimized={preview}
                         sizes="(max-width: 900px) 100vw, 33vw"
                         className={styles.img}
                         style={{ objectPosition: data.imagePosition }}
@@ -50,8 +52,8 @@ export default function CatalogCard({ data }: CatalogCardProps): React.JSX.Eleme
                 <p className={styles.desc}>{data.description}</p>
 
                 <ul className={styles.features}>
-                    {data.features.map((f) => (
-                        <li key={f}>
+                    {data.features.map((f, index) => (
+                        <li key={index}>
                             <CircleCheck size={13} aria-hidden /> <span>{f}</span>
                         </li>
                     ))}
@@ -63,9 +65,13 @@ export default function CatalogCard({ data }: CatalogCardProps): React.JSX.Eleme
                 </div>
                 <p className={styles.price}>{formatRupiah(data.price)}</p>
 
-                <Link href={`/booking?paket=${data.slug}`} className={styles.cta}>
-                    Pilih Paket <ArrowRight size={13} aria-hidden />
-                </Link>
+                {preview ? (
+                    <span className={styles.cta} aria-disabled="true">Pilih Paket <ArrowRight size={13} aria-hidden /></span>
+                ) : (
+                    <Link href={`/booking?paket=${data.slug}`} className={styles.cta}>
+                        Pilih Paket <ArrowRight size={13} aria-hidden />
+                    </Link>
+                )}
             </div>
         </article>
     );

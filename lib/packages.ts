@@ -10,7 +10,7 @@ import {
 } from './catalogTypes';
 import type { PhotoPackage } from './supabaseMock';
 
-interface PackageRow {
+export interface PackageRow {
     id: string;
     slug: string;
     label: string;
@@ -31,7 +31,7 @@ interface PackageRow {
 const COLUMNS =
     'id, slug, label, badge, title, description, capacity_label, capacity_icon, duration_minutes, price, price_unit, features, image_path, image_position, category:categories!inner(slug)';
 
-const toPackage = (r: PackageRow): CatalogPackage => ({
+export const toPackage = (r: PackageRow): CatalogPackage => ({
     id: r.id,
     slug: r.slug,
     label: r.label,
@@ -78,6 +78,8 @@ export async function getCatalogPackages({
     if (sort === 'termurah') query = query.order('price', { ascending: true });
     else if (sort === 'termahal') query = query.order('price', { ascending: false });
     else query = query.order('sort_order', { ascending: true });
+
+    query = query.order('id');
 
     const from = (page - 1) * PAGE_SIZE;
     const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
@@ -134,6 +136,7 @@ export async function getFeaturedPackages(): Promise<PhotoPackage[]> {
         .eq('is_active', true)
         .eq('is_featured', true)
         .order('sort_order', { ascending: true })
+        .order('id')
         .limit(4);
 
     if (error) throw new Error(`Gagal memuat paket favorit: ${error.message}`);
@@ -147,7 +150,7 @@ export async function getFeaturedPackages(): Promise<PhotoPackage[]> {
         priceUnit: r.price_unit,
         features: r.features,
         isPopular: r.is_popular,
-        imageSrc: r.image_path ?? '/images/packages/placeholder.jpg',
+        imageSrc: r.image_path ?? '/images/packages/hero1.jpg',
         imageAlt: r.title,
     }));
 }

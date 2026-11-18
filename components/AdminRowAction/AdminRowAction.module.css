@@ -1,0 +1,59 @@
+.root {
+    flex: 0 0 auto;
+    justify-self: end;
+}
+
+.root .trigger {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 1px solid #dce3f0;
+    border-radius: 6px;
+    color: #0f172a;
+    background: #fff;
+    cursor: pointer;
+}
+
+.panel {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    margin: 0;
+    padding: 4px;
+    border: 1px solid #dce3f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 6px 20px #0f172a24;
+}
+
+.panel .action {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: 36px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+    overflow-wrap: normal;
+    cursor: pointer;
+}
+
+.panel .action[data-danger='true'] {
+    color: #991b1b;
+}
+
+.root .trigger:hover:not(:disabled),
+.panel .action:hover:not(:disabled) {
+    background: #f1f4fc;
+}
