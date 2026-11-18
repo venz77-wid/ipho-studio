@@ -44,7 +44,11 @@ export default async function ManageWebsitePage({ searchParams }: {
             </section>}
             {active === 'portofolio' && <section className={styles.card}>
                 <h2>Galeri Portofolio</h2>
-                <p>Editor portofolio belum tersedia.</p>
+                <p>Pilih foto, atur kategori dan urutan, lalu tinjau sebelum dipublikasikan.</p>
+                <div className={styles.row}>
+                    <Link className={styles.button} href={`${base}/portofolio`}>Edit Galeri Portofolio</Link>
+                    <Link className={styles.button} href="/portofolio">Lihat Halaman <ArrowUpRight size={14} /></Link>
+                </div>
             </section>}
             {active === 'tentang' && <section className={styles.card}>
                 <h2>Tentang &amp; Kontak</h2>
