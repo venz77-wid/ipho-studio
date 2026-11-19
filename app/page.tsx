@@ -48,9 +48,9 @@ export default async function HomePage(): Promise<React.JSX.Element> {
                   <Link href="/katalog" className={styles.btnDark}>
                     Booking Sekarang <ArrowRight size={14} aria-hidden />
                   </Link>
-                  <Link href="/jadwal" className={styles.btnLight}>
+                  {/* <Link href="/jadwal" className={styles.btnLight}>
                     <CalendarDays size={14} aria-hidden /> Lihat Jadwal Tersedia
-                  </Link>
+                  </Link> */}
                 </div>
                 <div className={styles.rating}>
                   <span className={styles.stars} aria-label="Rating 5 bintang">
